@@ -3,8 +3,37 @@
 document.addEventListener('DOMContentLoaded', () => {
     // State Variables
     let selectedGame = null;
-    let customImageBase64 = null;
-    let activeBgType = 'steam'; // 'steam', 'color', 'upload'
+    
+    // Configurations for each cover layout independently
+    const layoutConfigs = {
+        front: {
+            bgType: 'steam', // 'steam', 'color', 'upload'
+            artStyle: 'boxart', // 'boxart', 'hero', 'header'
+            useLogo: true,
+            customImage: null,
+            bgColor: '#121214',
+            textColor: '#ffffff',
+            opacity: 30
+        },
+        back: {
+            bgType: 'steam',
+            artStyle: 'hero',
+            useLogo: false,
+            customImage: null,
+            bgColor: '#121214',
+            textColor: '#ffffff',
+            opacity: 30
+        },
+        disc: {
+            bgType: 'steam',
+            artStyle: 'header',
+            useLogo: true,
+            customImage: null,
+            bgColor: '#121214',
+            textColor: '#ffffff',
+            opacity: 30
+        }
+    };
 
     // DOM Elements
     const searchInput = document.getElementById('search-input');
@@ -16,22 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputTitle = document.getElementById('input-title');
     const inputAppid = document.getElementById('input-appid');
     const inputSpine = document.getElementById('input-spine');
-    const colorBg = document.getElementById('color-bg');
-    const colorText = document.getElementById('color-text');
     const fontSelect = document.getElementById('font-family');
     const alignSelect = document.getElementById('text-align');
-    const rangeOpacity = document.getElementById('input-overlay-opacity');
-    
-    // Custom Background Layout Elements
-    const steamArtStyle = document.getElementById('steam-art-style');
-    const checkUseLogo = document.getElementById('check-use-logo');
-    const steamStyleGroup = document.getElementById('steam-style-group');
-    const logoOverlayGroup = document.getElementById('logo-overlay-group');
-    
-    // Background type buttons
-    const btnBgSteam = document.getElementById('btn-bg-steam');
-    const btnBgColor = document.getElementById('btn-bg-color');
-    const uploadBg = document.getElementById('upload-bg');
 
     // Action buttons
     const btnPrint = document.getElementById('btn-print');
@@ -139,12 +154,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Select game and initialize Editor Controls
     function selectGame(game) {
         selectedGame = game;
-        customImageBase64 = null;
-        activeBgType = 'steam';
         
-        btnBgSteam.classList.add('active');
-        btnBgColor.classList.remove('active');
-        
+        // Reset layout configs custom images if a new game is selected
+        ['front', 'back', 'disc'].forEach(layout => {
+            layoutConfigs[layout].customImage = null;
+            layoutConfigs[layout].bgType = 'steam'; // fallback to steam art
+        });
+
         editorControls.style.display = 'block';
         btnPrint.disabled = false;
         btnIso.disabled = false;
@@ -153,8 +169,28 @@ document.addEventListener('DOMContentLoaded', () => {
         inputAppid.value = game.appid;
         inputSpine.value = '';
 
+        // Reset active classes on all source buttons in sidebar HTML
+        document.querySelectorAll('.btn-bg-source').forEach(btn => {
+            const bgType = btn.dataset.bg;
+            if (bgType === 'steam') {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        // Trigger updates
         updateLayoutContent();
-        updateBgArt();
+        refreshAllLayouts();
+    }
+
+    // Refresh backgrounds, logos, and styles for all covers
+    function refreshAllLayouts() {
+        ['front', 'back', 'disc'].forEach(layout => {
+            updateLayoutBackground(layout);
+            updateLayoutLogo(layout);
+            applyLayoutStyles(layout);
+        });
     }
 
     // Update layouts textual contents based on inputs
@@ -182,156 +218,218 @@ document.addEventListener('DOMContentLoaded', () => {
         previewDiscTitle.textContent = titleText;
         previewDiscAppid.textContent = `AppID: ${appidText}`;
         
-        updateLogoOverlay();
+        ['front', 'back', 'disc'].forEach(layout => {
+            updateLayoutLogo(layout);
+        });
     }
 
-    // Dynamically fetch and display background artwork
-    function updateBgArt() {
+    // Dynamically fetch and display background artwork for a specific layout
+    function updateLayoutBackground(layout) {
         if (!selectedGame) return;
 
-        imageLayers.forEach(layer => {
-            layer.style.backgroundImage = 'none';
-        });
+        const container = document.getElementById(`cd-${layout}`);
+        if (!container) return;
+        const layer = container.querySelector('.cd-image-layer');
+        if (!layer) return;
 
-        if (activeBgType === 'steam') {
-            steamStyleGroup.style.display = 'block';
-            logoOverlayGroup.style.display = 'block';
+        const config = layoutConfigs[layout];
+
+        // Hide/show the options groups in the HTML accordion details block
+        const steamStyleGroup = document.getElementById(`${layout}-steam-style-group`);
+        const logoOverlayGroup = document.getElementById(`${layout}-logo-overlay-group`);
+
+        layer.style.backgroundImage = 'none';
+
+        if (config.bgType === 'steam') {
+            if (steamStyleGroup) steamStyleGroup.style.display = 'block';
+            if (logoOverlayGroup) logoOverlayGroup.style.display = 'block';
 
             let assetPath = 'library_600x900.jpg';
-            if (steamArtStyle.value === 'hero') {
+            if (config.artStyle === 'hero') {
                 assetPath = 'library_hero.jpg';
-            } else if (steamArtStyle.value === 'header') {
+            } else if (config.artStyle === 'header') {
                 assetPath = 'header.jpg';
             }
 
             const coverUrl = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${selectedGame.appid}/${assetPath}`;
             const proxiedUrl = `/api/proxy-image?url=${encodeURIComponent(coverUrl)}`;
-            
-            imageLayers.forEach(layer => {
-                layer.style.backgroundImage = `url('${proxiedUrl}')`;
-            });
+            layer.style.backgroundImage = `url('${proxiedUrl}')`;
         } else {
-            steamStyleGroup.style.display = 'none';
-            logoOverlayGroup.style.display = 'none';
+            if (steamStyleGroup) steamStyleGroup.style.display = 'none';
+            if (logoOverlayGroup) logoOverlayGroup.style.display = 'none';
 
-            if (activeBgType === 'upload' && customImageBase64) {
-                imageLayers.forEach(layer => {
-                    layer.style.backgroundImage = `url('${customImageBase64}')`;
-                });
+            if (config.bgType === 'upload' && config.customImage) {
+                layer.style.backgroundImage = `url('${config.customImage}')`;
             }
         }
-
-        updateLogoOverlay();
     }
 
-    // Updates logo transparent overlay graphic
-    function updateLogoOverlay() {
-        const useLogo = checkUseLogo.checked && activeBgType === 'steam' && selectedGame;
+    // Updates transparent game logo overlay for a specific layout
+    function updateLayoutLogo(layout) {
+        if (!selectedGame) return;
 
-        const logoElms = [
-            { logo: previewFrontLogo, text: previewFrontTitle },
-            { logo: previewBackLogo, text: previewBackTitle },
-            { logo: previewDiscLogo, text: previewDiscTitle }
-        ];
+        const config = layoutConfigs[layout];
+        const logoImg = document.getElementById(`preview-${layout}-logo`);
+        
+        let textHeader;
+        if (layout === 'front') {
+            textHeader = previewFrontTitle;
+        } else if (layout === 'back') {
+            textHeader = previewBackTitle;
+        } else if (layout === 'disc') {
+            textHeader = previewDiscTitle;
+        }
+
+        if (!logoImg || !textHeader) return;
+
+        const useLogo = config.useLogo && config.bgType === 'steam';
 
         if (useLogo) {
             const logoUrl = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${selectedGame.appid}/logo.png`;
             const proxiedLogo = `/api/proxy-image?url=${encodeURIComponent(logoUrl)}`;
 
-            logoElms.forEach(item => {
-                item.logo.onload = () => {
-                    item.logo.style.display = 'block';
-                    item.text.style.display = 'none';
-                };
-                item.logo.onerror = () => {
-                    item.logo.style.display = 'none';
-                    item.text.style.display = 'block';
-                };
-                item.logo.src = proxiedLogo;
-            });
+            logoImg.onload = () => {
+                logoImg.style.display = 'block';
+                textHeader.style.display = 'none';
+            };
+            logoImg.onerror = () => {
+                logoImg.style.display = 'none';
+                textHeader.style.display = 'block';
+            };
+            logoImg.src = proxiedLogo;
         } else {
-            logoElms.forEach(item => {
-                item.logo.src = '';
-                item.logo.style.display = 'none';
-                item.text.style.display = 'block';
-            });
+            logoImg.src = '';
+            logoImg.style.display = 'none';
+            textHeader.style.display = 'block';
         }
     }
 
-    // Apply color, fonts and layout styles
-    function applyStyles() {
-        const textVal = colorText.value;
-        const bgVal = colorBg.value;
+    // Apply styling parameters for a specific layout
+    function applyLayoutStyles(layout) {
+        const config = layoutConfigs[layout];
+        const container = document.getElementById(`cd-${layout}`);
+        if (!container) return;
+
+        // Apply bg color override
+        container.style.backgroundColor = config.bgColor;
+
+        // Apply text color override
+        container.style.color = config.textColor;
+
+        // Apply global fonts and alignments
         const fontVal = fontSelect.value;
-        const alignVal = alignSelect.value;
-        const opacityVal = rangeOpacity.value;
+        container.style.fontFamily = fontVal;
 
-        cdFront.style.backgroundColor = bgVal;
-        cdBack.style.backgroundColor = bgVal;
-        cdDisc.style.backgroundColor = bgVal;
+        // Text align (Front and Disc are aligned globally, Back has custom details)
+        if (layout === 'front' || layout === 'disc') {
+            const alignVal = alignSelect.value;
+            const textContent = container.querySelector('.cd-text-content, .cd-disc-content');
+            if (textContent) {
+                textContent.style.textAlign = alignVal;
+                textContent.style.alignItems = alignVal === 'center' ? 'center' : (alignVal === 'right' ? 'flex-end' : 'flex-start');
+            }
 
-        document.querySelectorAll('.cd-front .cd-text-content, .cd-disc-content').forEach(el => {
-            el.style.textAlign = alignVal;
-            el.style.alignItems = alignVal === 'center' ? 'center' : (alignVal === 'right' ? 'flex-end' : 'flex-start');
-        });
-
-        const badge = document.querySelector('.cd-front-badge');
-        if (badge) {
-            badge.style.alignSelf = alignVal === 'center' ? 'center' : (alignVal === 'right' ? 'flex-end' : 'flex-start');
+            if (layout === 'front') {
+                const badge = container.querySelector('.cd-front-badge');
+                if (badge) {
+                    badge.style.alignSelf = alignVal === 'center' ? 'center' : (alignVal === 'right' ? 'flex-end' : 'flex-start');
+                }
+            }
         }
 
-        cdFront.style.color = textVal;
-        cdBack.style.color = textVal;
-        cdDisc.style.color = textVal;
-
-        cdFront.style.fontFamily = fontVal;
-        cdBack.style.fontFamily = fontVal;
-        cdDisc.style.fontFamily = fontVal;
-
-        overlayLayers.forEach(layer => {
-            layer.style.backgroundColor = `rgba(10, 10, 12, ${opacityVal / 100})`;
-        });
+        // Apply overlay opacity darkening
+        const overlay = container.querySelector('.cd-overlay-layer');
+        if (overlay) {
+            overlay.style.backgroundColor = `rgba(10, 10, 12, ${config.opacity / 100})`;
+        }
     }
 
+    // Event Bindings
     inputTitle.addEventListener('input', updateLayoutContent);
     inputSpine.addEventListener('input', updateLayoutContent);
 
-    colorBg.addEventListener('input', applyStyles);
-    colorText.addEventListener('input', applyStyles);
-    fontSelect.addEventListener('change', applyStyles);
-    alignSelect.addEventListener('change', applyStyles);
-    rangeOpacity.addEventListener('input', applyStyles);
-
-    steamArtStyle.addEventListener('change', updateBgArt);
-    checkUseLogo.addEventListener('change', updateLogoOverlay);
-
-    btnBgSteam.addEventListener('click', () => {
-        activeBgType = 'steam';
-        btnBgSteam.classList.add('active');
-        btnBgColor.classList.remove('active');
-        updateBgArt();
+    // Global typography selections
+    fontSelect.addEventListener('change', () => {
+        ['front', 'back', 'disc'].forEach(layout => applyLayoutStyles(layout));
+    });
+    alignSelect.addEventListener('change', () => {
+        ['front', 'back', 'disc'].forEach(layout => applyLayoutStyles(layout));
     });
 
-    btnBgColor.addEventListener('click', () => {
-        activeBgType = 'color';
-        btnBgColor.classList.add('active');
-        btnBgSteam.classList.remove('active');
-        updateBgArt();
+    // Color pickers per layout
+    document.querySelectorAll('.color-picker').forEach(picker => {
+        picker.addEventListener('input', (e) => {
+            const layout = e.target.dataset.layout;
+            const styleName = e.target.dataset.style;
+            layoutConfigs[layout][styleName] = e.target.value;
+            applyLayoutStyles(layout);
+        });
     });
 
-    uploadBg.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+    // Background source selectors
+    document.querySelectorAll('.btn-bg-source').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const layout = e.target.dataset.layout;
+            const bgType = e.target.dataset.bg;
 
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            customImageBase64 = event.target.result;
-            activeBgType = 'upload';
-            btnBgSteam.classList.remove('active');
-            btnBgColor.classList.remove('active');
-            updateBgArt();
-        };
-        reader.readAsDataURL(file);
+            layoutConfigs[layout].bgType = bgType;
+
+            const parent = e.target.parentElement;
+            parent.querySelectorAll('.btn-bg-source').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+
+            updateLayoutBackground(layout);
+            applyLayoutStyles(layout);
+        });
+    });
+
+    // Custom image uploads
+    document.querySelectorAll('.upload-bg-input').forEach(input => {
+        input.addEventListener('change', (e) => {
+            const layout = e.target.dataset.layout;
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                layoutConfigs[layout].customImage = event.target.result;
+                layoutConfigs[layout].bgType = 'upload';
+                
+                const group = e.target.closest('.bg-options-group');
+                group.querySelectorAll('.btn-bg-source').forEach(b => b.classList.remove('active'));
+                
+                updateLayoutBackground(layout);
+                applyLayoutStyles(layout);
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+
+    // Steam background style selectors
+    document.querySelectorAll('.steam-art-select').forEach(select => {
+        select.addEventListener('change', (e) => {
+            const layout = e.target.dataset.layout;
+            layoutConfigs[layout].artStyle = e.target.value;
+            updateLayoutBackground(layout);
+        });
+    });
+
+    // Transparent logo check-boxes
+    document.querySelectorAll('.logo-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+            const layout = e.target.dataset.layout;
+            layoutConfigs[layout].useLogo = e.target.checked;
+            updateLayoutLogo(layout);
+        });
+    });
+
+    // Darken opacity sliders
+    document.querySelectorAll('.opacity-range').forEach(slider => {
+        slider.addEventListener('input', (e) => {
+            const layout = e.target.dataset.layout;
+            layoutConfigs[layout].opacity = e.target.value;
+            applyLayoutStyles(layout);
+        });
     });
 
     tabBtns.forEach(btn => {

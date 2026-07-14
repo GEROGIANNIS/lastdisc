@@ -822,6 +822,62 @@ header {
     cursor: pointer;
 }
 
+/* Details / Summary Accordion styling */
+.layout-details-section {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.01);
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+    transition: all 0.25s ease;
+}
+
+.layout-details-section[open] {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(0, 223, 216, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.layout-details-section summary {
+    padding: 0.75rem 1rem;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #fff;
+    cursor: pointer;
+    user-select: none;
+    outline: none;
+    transition: color 0.2s;
+}
+
+.layout-details-section summary:hover {
+    color: var(--accent-teal);
+}
+
+.layout-details-section[open] summary {
+    border-bottom: 1px solid var(--border-color);
+    color: var(--accent-teal);
+}
+
+.details-content {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* Button groups styling for BG Source */
+.bg-options-group {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.bg-options-group button, .bg-options-group .file-label {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+}
+
 .cd-logo-image {
     max-width: 85%;
     object-fit: contain;

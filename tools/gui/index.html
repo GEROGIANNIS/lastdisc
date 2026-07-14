@@ -65,17 +65,6 @@
 
                 <div class="control-row">
                     <div class="control-group">
-                        <label for="color-bg">Background Color</label>
-                        <input type="color" id="color-bg" value="#121214">
-                    </div>
-                    <div class="control-group">
-                        <label for="color-text">Text Color</label>
-                        <input type="color" id="color-text" value="#ffffff">
-                    </div>
-                </div>
-
-                <div class="control-row">
-                    <div class="control-group">
                         <label for="font-family">Font Style</label>
                         <select id="font-family">
                             <option value="'Outfit', sans-serif">Outfit (Modern)</option>
@@ -94,38 +83,153 @@
                     </div>
                 </div>
 
-                <div class="control-group">
-                    <label>Cover Background Image</label>
-                    <div class="bg-options">
-                        <button id="btn-bg-steam" class="btn btn-sm btn-outline active">Steam Art</button>
-                        <button id="btn-bg-color" class="btn btn-sm btn-outline">Solid Color</button>
-                        <label for="upload-bg" class="btn btn-sm btn-outline file-label">
-                            Upload File
-                            <input type="file" id="upload-bg" accept="image/*" style="display: none;">
-                        </label>
+                <!-- Accordions for independent layout stylings -->
+                <details open class="layout-details-section">
+                    <summary>Front Cover Settings</summary>
+                    <div class="details-content">
+                        <div class="control-row">
+                            <div class="control-group">
+                                <label for="front-color-bg">BG Color</label>
+                                <input type="color" id="front-color-bg" class="color-picker" data-layout="front" data-style="bgColor" value="#121214">
+                            </div>
+                            <div class="control-group">
+                                <label for="front-color-text">Text Color</label>
+                                <input type="color" id="front-color-text" class="color-picker" data-layout="front" data-style="textColor" value="#ffffff">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Background Source</label>
+                            <div class="bg-options-group">
+                                <button class="btn btn-sm btn-outline active btn-bg-source" data-layout="front" data-bg="steam">Steam Art</button>
+                                <button class="btn btn-sm btn-outline btn-bg-source" data-layout="front" data-bg="color">Solid Color</button>
+                                <label class="btn btn-sm btn-outline file-label">
+                                    Upload
+                                    <input type="file" class="upload-bg-input" data-layout="front" accept="image/*" style="display: none;">
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group steam-style-group" id="front-steam-style-group">
+                            <label for="front-steam-art-style">Steam Background Style</label>
+                            <select id="front-steam-art-style" class="steam-art-select" data-layout="front">
+                                <option value="boxart" selected>Vertical Box Art</option>
+                                <option value="hero">Landscape Hero</option>
+                                <option value="header">Store Header Banner</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group logo-overlay-group" id="front-logo-overlay-group">
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="front-check-use-logo" class="logo-checkbox" data-layout="front" checked>
+                                <span>Use Official Game Logo</span>
+                            </label>
+                        </div>
+
+                        <div class="control-group">
+                            <label for="front-overlay-opacity">Art Overlay Opacity (Darken)</label>
+                            <input type="range" id="front-overlay-opacity" class="opacity-range" min="0" max="90" value="30" data-layout="front">
+                        </div>
                     </div>
-                </div>
+                </details>
 
-                <div class="control-group" id="steam-style-group">
-                    <label for="steam-art-style">Steam Background Style</label>
-                    <select id="steam-art-style">
-                        <option value="boxart" selected>Vertical Box Art (Library Capsule)</option>
-                        <option value="hero">Landscape Hero (Library Banner)</option>
-                        <option value="header">Store Header Banner (Standard Wide)</option>
-                    </select>
-                </div>
+                <details class="layout-details-section">
+                    <summary>Back Inlay Settings</summary>
+                    <div class="details-content">
+                        <div class="control-row">
+                            <div class="control-group">
+                                <label for="back-color-bg">BG Color</label>
+                                <input type="color" id="back-color-bg" class="color-picker" data-layout="back" data-style="bgColor" value="#121214">
+                            </div>
+                            <div class="control-group">
+                                <label for="back-color-text">Text Color</label>
+                                <input type="color" id="back-color-text" class="color-picker" data-layout="back" data-style="textColor" value="#ffffff">
+                            </div>
+                        </div>
 
-                <div class="control-group" id="logo-overlay-group">
-                    <label class="checkbox-container">
-                        <input type="checkbox" id="check-use-logo" checked>
-                        <span>Use Official Game Logo Overlay</span>
-                    </label>
-                </div>
+                        <div class="control-group">
+                            <label>Background Source</label>
+                            <div class="bg-options-group">
+                                <button class="btn btn-sm btn-outline active btn-bg-source" data-layout="back" data-bg="steam">Steam Art</button>
+                                <button class="btn btn-sm btn-outline btn-bg-source" data-layout="back" data-bg="color">Solid Color</button>
+                                <label class="btn btn-sm btn-outline file-label">
+                                    Upload
+                                    <input type="file" class="upload-bg-input" data-layout="back" accept="image/*" style="display: none;">
+                                </label>
+                            </div>
+                        </div>
 
-                <div class="control-group">
-                    <label for="input-overlay-opacity">Art Overlay Opacity (Darken)</label>
-                    <input type="range" id="input-overlay-opacity" min="0" max="90" value="30">
-                </div>
+                        <div class="control-group steam-style-group" id="back-steam-style-group">
+                            <label for="back-steam-art-style">Steam Background Style</label>
+                            <select id="back-steam-art-style" class="steam-art-select" data-layout="back">
+                                <option value="boxart">Vertical Box Art</option>
+                                <option value="hero" selected>Landscape Hero</option>
+                                <option value="header">Store Header Banner</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group logo-overlay-group" id="back-logo-overlay-group">
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="back-check-use-logo" class="logo-checkbox" data-layout="back">
+                                <span>Use Official Game Logo</span>
+                            </label>
+                        </div>
+
+                        <div class="control-group">
+                            <label for="back-overlay-opacity">Art Overlay Opacity (Darken)</label>
+                            <input type="range" id="back-overlay-opacity" class="opacity-range" min="0" max="90" value="30" data-layout="back">
+                        </div>
+                    </div>
+                </details>
+
+                <details class="layout-details-section">
+                    <summary>Disc Label Settings</summary>
+                    <div class="details-content">
+                        <div class="control-row">
+                            <div class="control-group">
+                                <label for="disc-color-bg">BG Color</label>
+                                <input type="color" id="disc-color-bg" class="color-picker" data-layout="disc" data-style="bgColor" value="#121214">
+                            </div>
+                            <div class="control-group">
+                                <label for="disc-color-text">Text Color</label>
+                                <input type="color" id="disc-color-text" class="color-picker" data-layout="disc" data-style="textColor" value="#ffffff">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Background Source</label>
+                            <div class="bg-options-group">
+                                <button class="btn btn-sm btn-outline active btn-bg-source" data-layout="disc" data-bg="steam">Steam Art</button>
+                                <button class="btn btn-sm btn-outline btn-bg-source" data-layout="disc" data-bg="color">Solid Color</button>
+                                <label class="btn btn-sm btn-outline file-label">
+                                    Upload
+                                    <input type="file" class="upload-bg-input" data-layout="disc" accept="image/*" style="display: none;">
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group steam-style-group" id="disc-steam-style-group">
+                            <label for="disc-steam-art-style">Steam Background Style</label>
+                            <select id="disc-steam-art-style" class="steam-art-select" data-layout="disc">
+                                <option value="boxart">Vertical Box Art</option>
+                                <option value="hero">Landscape Hero</option>
+                                <option value="header" selected>Store Header Banner</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group logo-overlay-group" id="disc-logo-overlay-group">
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="disc-check-use-logo" class="logo-checkbox" data-layout="disc" checked>
+                                <span>Use Official Game Logo</span>
+                            </label>
+                        </div>
+
+                        <div class="control-group">
+                            <label for="disc-overlay-opacity">Art Overlay Opacity (Darken)</label>
+                            <input type="range" id="disc-overlay-opacity" class="opacity-range" min="0" max="90" value="30" data-layout="disc">
+                        </div>
+                    </div>
+                </details>
 
                 <div class="status-box" id="iso-status" style="display: none;">
                     <div class="spinner"></div>
