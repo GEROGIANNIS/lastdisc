@@ -13,7 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
             customImage: null,
             bgColor: '#121214',
             textColor: '#ffffff',
-            opacity: 30
+            opacity: 30,
+            bgZoom: 100,
+            logoSize: 100
         },
         back: {
             bgType: 'steam',
@@ -22,7 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
             customImage: null,
             bgColor: '#121214',
             textColor: '#ffffff',
-            opacity: 30
+            opacity: 30,
+            bgZoom: 100,
+            logoSize: 100
         },
         disc: {
             bgType: 'steam',
@@ -31,7 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
             customImage: null,
             bgColor: '#121214',
             textColor: '#ffffff',
-            opacity: 30
+            opacity: 30,
+            bgZoom: 100,
+            logoSize: 100
         }
     };
 
@@ -159,6 +165,8 @@ document.addEventListener('DOMContentLoaded', () => {
         ['front', 'back', 'disc'].forEach(layout => {
             layoutConfigs[layout].customImage = null;
             layoutConfigs[layout].bgType = 'steam'; // fallback to steam art
+            layoutConfigs[layout].bgZoom = 100;
+            layoutConfigs[layout].logoSize = 100;
         });
 
         editorControls.style.display = 'block';
@@ -178,6 +186,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.classList.remove('active');
             }
         });
+
+        // Reset all zoom/size sliders
+        document.querySelectorAll('.bg-zoom-range').forEach(input => input.value = 100);
+        document.querySelectorAll('.logo-size-range').forEach(input => input.value = 100);
+        document.querySelectorAll('[id$="-bg-zoom-val"]').forEach(span => span.textContent = '100');
+        document.querySelectorAll('[id$="-logo-size-val"]').forEach(span => span.textContent = '100');
 
         // Trigger updates
         updateLayoutContent();
@@ -237,12 +251,21 @@ document.addEventListener('DOMContentLoaded', () => {
         // Hide/show the options groups in the HTML accordion details block
         const steamStyleGroup = document.getElementById(`${layout}-steam-style-group`);
         const logoOverlayGroup = document.getElementById(`${layout}-logo-overlay-group`);
+        const logoSizeGroup = document.getElementById(`${layout}-logo-size-group`);
 
         layer.style.backgroundImage = 'none';
+
+        // Apply background zoom factor
+        layer.style.transform = `scale(${config.bgZoom / 100})`;
+
+        // Update background zoom label indicators
+        const zoomValSpan = document.getElementById(`${layout}-bg-zoom-val`);
+        if (zoomValSpan) zoomValSpan.textContent = config.bgZoom;
 
         if (config.bgType === 'steam') {
             if (steamStyleGroup) steamStyleGroup.style.display = 'block';
             if (logoOverlayGroup) logoOverlayGroup.style.display = 'block';
+            if (logoSizeGroup) logoSizeGroup.style.display = 'block';
 
             let assetPath = 'library_600x900.jpg';
             if (config.artStyle === 'hero') {
@@ -257,6 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             if (steamStyleGroup) steamStyleGroup.style.display = 'none';
             if (logoOverlayGroup) logoOverlayGroup.style.display = 'none';
+            if (logoSizeGroup) logoSizeGroup.style.display = 'none';
 
             if (config.bgType === 'upload' && config.customImage) {
                 layer.style.backgroundImage = `url('${config.customImage}')`;
@@ -284,9 +308,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const useLogo = config.useLogo && config.bgType === 'steam';
 
+        // Update logo size label indicators
+        const logoSizeValSpan = document.getElementById(`${layout}-logo-size-val`);
+        if (logoSizeValSpan) logoSizeValSpan.textContent = config.logoSize;
+
         if (useLogo) {
             const logoUrl = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${selectedGame.appid}/logo.png`;
             const proxiedLogo = `/api/proxy-image?url=${encodeURIComponent(logoUrl)}`;
+
+            // Apply logo size scaling factor (bases: front: 55px, back: 40px, disc: 35px)
+            let baseMaxHeight = 40;
+            if (layout === 'front') baseMaxHeight = 55;
+            if (layout === 'disc') baseMaxHeight = 35;
+            logoImg.style.maxHeight = `${baseMaxHeight * (config.logoSize / 100)}px`;
 
             logoImg.onload = () => {
                 logoImg.style.display = 'block';
@@ -429,6 +463,24 @@ document.addEventListener('DOMContentLoaded', () => {
             const layout = e.target.dataset.layout;
             layoutConfigs[layout].opacity = e.target.value;
             applyLayoutStyles(layout);
+        });
+    });
+
+    // Background zoom sliders
+    document.querySelectorAll('.bg-zoom-range').forEach(slider => {
+        slider.addEventListener('input', (e) => {
+            const layout = e.target.dataset.layout;
+            layoutConfigs[layout].bgZoom = e.target.value;
+            updateLayoutBackground(layout);
+        });
+    });
+
+    // Logo size sliders
+    document.querySelectorAll('.logo-size-range').forEach(slider => {
+        slider.addEventListener('input', (e) => {
+            const layout = e.target.dataset.layout;
+            layoutConfigs[layout].logoSize = e.target.value;
+            updateLayoutLogo(layout);
         });
     });
 
