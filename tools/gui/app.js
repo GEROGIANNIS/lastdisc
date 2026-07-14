@@ -599,7 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const val = e.target.value;
         
         // Remove existing case classes
-        editorWorkspace.classList.remove('case-ps1pal', 'case-dvd');
+        editorWorkspace.classList.remove('case-dvd');
         
         const containerFront = document.getElementById('container-front');
         const containerBack = document.getElementById('container-back');
@@ -625,9 +625,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelector('.tab-btn[data-target="workspace-all"]').click();
             }
         } else {
-            if (val === 'ps1pal') {
-                editorWorkspace.classList.add('case-ps1pal');
-            }
             containerFront.style.display = 'block';
             containerBack.style.display = 'block';
             containerDvd.style.display = 'none';

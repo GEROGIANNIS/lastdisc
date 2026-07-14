@@ -932,34 +932,6 @@ header {
     margin-bottom: 6mm;
 }
 
-/* PAL PlayStation 1 Case Sizing overrides */
-.case-ps1pal #container-back h4::after {
-    content: " - PAL Format (164mm x 122mm)";
-}
-
-.case-ps1pal .cd-back {
-    width: 164mm;
-    height: 122mm;
-}
-
-.case-ps1pal .cd-back .cd-spine {
-    width: 13mm;
-    height: 122mm;
-}
-
-.case-ps1pal .cd-back .cd-back-main {
-    width: 138mm;
-    height: 122mm;
-}
-
-.case-ps1pal .cd-back .fold-l {
-    left: 13mm;
-}
-
-.case-ps1pal .cd-back .fold-r {
-    right: 13mm;
-}
-
 /* PlayStation 2 / DVD Case Sizing & Styling */
 .dvd-wrap {
     width: 273mm;
@@ -1085,6 +1057,37 @@ header {
         background: none !important;
         box-shadow: none !important;
         display: block !important;
+    }
+
+    /* Print Case Format Filters */
+    .editor-workspace:not(.case-dvd) #container-dvd {
+        display: none !important;
+    }
+    .case-dvd #container-front,
+    .case-dvd #container-back {
+        display: none !important;
+    }
+
+    /* Print Tab Switcher Filters */
+    .workspace-front #container-back,
+    .workspace-front #container-disc,
+    .workspace-front #container-dvd {
+        display: none !important;
+    }
+    .workspace-back #container-front,
+    .workspace-back #container-disc,
+    .workspace-back #container-dvd {
+        display: none !important;
+    }
+    .workspace-dvd #container-front,
+    .workspace-dvd #container-back,
+    .workspace-dvd #container-disc {
+        display: none !important;
+    }
+    .workspace-disc #container-front,
+    .workspace-disc #container-back,
+    .workspace-disc #container-dvd {
+        display: none !important;
     }
     
     .cd-front, .cd-back, .cd-disc, .dvd-wrap {
