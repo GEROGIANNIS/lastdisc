@@ -1075,6 +1075,30 @@ header {
         display: none !important;
     }
 
+    /* Print DVD Wrap Rotation & Centering */
+    .case-dvd #container-dvd {
+        page-break-after: always;
+        width: 210mm !important;
+        height: 297mm !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
+        position: relative !important;
+        background: none !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .case-dvd #cd-dvd {
+        transform: rotate(90deg) !important;
+        transform-origin: center center !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+    }
+
     /* Print Tab Switcher Filters */
     .workspace-front #container-back,
     .workspace-front #container-disc,
