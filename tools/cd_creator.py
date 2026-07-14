@@ -458,19 +458,37 @@ def main():
         if not os.path.exists(gui_dir):
             os.makedirs(gui_dir, exist_ok=True)
             
-        server_address = ('', args.port)
-        httpd = HTTPServer(server_address, CDCreatorHTTPHandler)
+        # Bind explicitly to 127.0.0.1 to avoid dual-stack localhost resolution hangs
+        server_address = ('127.0.0.1', args.port)
+        try:
+            httpd = HTTPServer(server_address, CDCreatorHTTPHandler)
+        except OSError as e:
+            is_in_use = False
+            if hasattr(e, 'errno') and e.errno in (98, 48):
+                is_in_use = True
+            elif sys.platform == "win32" and getattr(e, "winerror", None) == 10048:
+                is_in_use = True
+                
+            if is_in_use:
+                print(f"Error: Port {args.port} is already in use.")
+                print(f"Please close any running server instances or try a different port, e.g.:")
+                print(f"  python tools/cd_creator.py --gui --port {args.port + 1}")
+                sys.exit(1)
+            raise e
+
         print("====================================================")
         print("          LastDisc GUI Server Started               ")
         print("====================================================")
-        print(f"Server URL: http://localhost:{args.port}")
+        print(f"Server URL: http://127.0.0.1:{args.port}")
         print("Press Ctrl+C to terminate.")
         
-        # Open browser in a separate thread/non-blocking
-        webbrowser.open(f"http://localhost:{args.port}")
+        # Open browser in a separate daemon thread to avoid blocking socket initialization
+        import threading
+        url = f"http://127.0.0.1:{args.port}"
+        threading.Thread(target=webbrowser.open, args=(url,), daemon=True).start()
         
         try:
-            httpd.serve_forever()
+            httpd.serve_forever(poll_interval=0.5)
         except KeyboardInterrupt:
             print("\nShutting down server.")
             httpd.server_close()
