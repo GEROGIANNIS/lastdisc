@@ -54,12 +54,14 @@ disappear just because the industry's moving away from pressing them.
 See [`PROJECT_PLAN.md`](PROJECT_PLAN.md) for the full architecture rationale,
 build phases, and testing checklist.
 
+For a detailed walkthrough, setup details, and troubleshooting, refer to the **[Installation and Running Guide](guide/README.md)**.
+
 ## Quick start
 
 ### Linux
 
 ```bash
-cd linux
+cd setup/linux
 chmod +x install.sh watcher.sh make_marker.sh
 ./install.sh
 ```
@@ -68,14 +70,14 @@ This installs the watcher to `~/.local/bin/lastdisc-watcher.sh` and enables
 it as a per-user systemd service (`systemctl --user status lastdisc.service`
 to check it, `journalctl --user -u lastdisc.service -f` to watch logs).
 
-To uninstall: `./uninstall.sh`
+To uninstall (from `setup/linux/`): `./uninstall.sh`
 
 ### Windows
 
 Run in an **unelevated** PowerShell prompt:
 
 ```powershell
-cd windows
+cd setup/windows
 .\install.ps1
 ```
 
@@ -83,7 +85,7 @@ This registers a logon-triggered Scheduled Task named `LastDiscWatcher` at
 **Limited** run level. Do not run `install.ps1` as Administrator — elevation
 breaks the session inheritance this depends on.
 
-To uninstall: `.\uninstall.ps1`
+To uninstall (from `setup/windows/`): `.\uninstall.ps1`
 
 ### Preparing a disc
 
@@ -93,10 +95,10 @@ manifest:
 
 ```bash
 # Linux
-./linux/make_marker.sh 12345 "My Game" ./disc_root
+./setup/linux/make_marker.sh 12345 "My Game" ./disc_root
 
 # Windows
-.\windows\make_marker.ps1 -AppId 12345 -Title "My Game" -OutDir .\disc_root
+.\setup\windows\make_marker.ps1 -AppId 12345 -Title "My Game" -OutDir .\disc_root
 ```
 
 Burn the contents of `disc_root/` to your disc (hybrid ISO9660/Joliet or UDF
