@@ -803,6 +803,50 @@ header {
     display: none !important;
 }
 
+/* Checkbox and logo custom layout options */
+.checkbox-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    user-select: none;
+    margin-top: 0.5rem;
+}
+
+.checkbox-container input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent-teal);
+    cursor: pointer;
+}
+
+.cd-logo-image {
+    max-width: 85%;
+    object-fit: contain;
+    align-self: center;
+    filter: drop-shadow(0px 2px 6px rgba(0, 0, 0, 0.8));
+    z-index: 3;
+    transition: opacity 0.3s;
+}
+
+.cd-front .cd-logo-image {
+    max-height: 55px;
+    margin-bottom: 5mm;
+}
+
+.cd-back-main .cd-logo-image {
+    max-height: 40px;
+    margin-bottom: 3mm;
+    align-self: flex-start;
+}
+
+.cd-disc .cd-logo-image {
+    max-height: 35px;
+    margin-bottom: 6mm;
+}
+
 /* ========================================================
    PRINT SPECIFIC CSS RULES (100% SCALE PRINTING IN MM)
    ======================================================== */

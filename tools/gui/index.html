@@ -106,6 +106,22 @@
                     </div>
                 </div>
 
+                <div class="control-group" id="steam-style-group">
+                    <label for="steam-art-style">Steam Background Style</label>
+                    <select id="steam-art-style">
+                        <option value="boxart" selected>Vertical Box Art (Library Capsule)</option>
+                        <option value="hero">Landscape Hero (Library Banner)</option>
+                        <option value="header">Store Header Banner (Standard Wide)</option>
+                    </select>
+                </div>
+
+                <div class="control-group" id="logo-overlay-group">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="check-use-logo" checked>
+                        <span>Use Official Game Logo Overlay</span>
+                    </label>
+                </div>
+
                 <div class="control-group">
                     <label for="input-overlay-opacity">Art Overlay Opacity (Darken)</label>
                     <input type="range" id="input-overlay-opacity" min="0" max="90" value="30">
@@ -134,14 +150,15 @@
                     <div class="cd-front" id="cd-front">
                         <div class="cd-image-layer"></div>
                         <div class="cd-overlay-layer"></div>
-                        <div class="cd-text-content">
-                            <h1 id="preview-front-title">Game Title</h1>
-                            <div class="cd-front-badge">
-                                <span class="badge-icon">💿</span>
-                                <span class="badge-text">Steam launcher</span>
-                            </div>
-                            <div class="cd-appid-label" id="preview-front-appid">AppID: 00000</div>
-                        </div>
+                         <div class="cd-text-content">
+                             <img id="preview-front-logo" class="cd-logo-image" style="display: none;" alt="Game Logo">
+                             <h1 id="preview-front-title">Game Title</h1>
+                             <div class="cd-front-badge">
+                                 <span class="badge-icon">💿</span>
+                                 <span class="badge-text">Steam launcher</span>
+                             </div>
+                             <div class="cd-appid-label" id="preview-front-appid">AppID: 00000</div>
+                         </div>
                         <div class="cut-guide cut-tl"></div>
                         <div class="cut-guide cut-tr"></div>
                         <div class="cut-guide cut-bl"></div>
@@ -162,11 +179,12 @@
                         <div class="cd-back-main">
                             <div class="cd-image-layer"></div>
                             <div class="cd-overlay-layer"></div>
-                            <div class="cd-text-content">
-                                <div class="back-logo">
-                                    <span class="logo-icon">💿</span> LastDisc
-                                </div>
-                                <h2 id="preview-back-title">Game Title</h2>
+                             <div class="cd-text-content">
+                                 <div class="back-logo">
+                                     <span class="logo-icon">💿</span> LastDisc
+                                 </div>
+                                 <img id="preview-back-logo" class="cd-logo-image" style="display: none;" alt="Game Logo">
+                                 <h2 id="preview-back-title">Game Title</h2>
                                 <div class="back-game-info">
                                     <div class="back-spec">SYSTEM: Steam Launcher</div>
                                     <div class="back-spec" id="preview-back-appid">STEAM APPID: 00000</div>
@@ -206,10 +224,10 @@
                         <!-- Center hole cutouts -->
                         <div class="cd-center-hole-outer"></div>
                         <div class="cd-center-hole-inner"></div>
-                        
-                        <div class="cd-disc-content">
-                            <div class="disc-header">LastDisc Launcher</div>
-                            <h2 id="preview-disc-title">Game Title</h2>
+                                                <div class="cd-disc-content">
+                             <div class="disc-header">LastDisc Launcher</div>
+                             <img id="preview-disc-logo" class="cd-logo-image" style="display: none;" alt="Game Logo">
+                             <h2 id="preview-disc-title">Game Title</h2>
                             <div class="disc-footer" id="preview-disc-appid">AppID: 00000</div>
                             <div class="disc-disclaimer">FOR USE IN REGISTERED OPTICAL DRIVE. OWNED & LICENSED ON STEAM.</div>
                         </div>

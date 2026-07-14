@@ -22,6 +22,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const alignSelect = document.getElementById('text-align');
     const rangeOpacity = document.getElementById('input-overlay-opacity');
     
+    // Custom Background Layout Elements
+    const steamArtStyle = document.getElementById('steam-art-style');
+    const checkUseLogo = document.getElementById('check-use-logo');
+    const steamStyleGroup = document.getElementById('steam-style-group');
+    const logoOverlayGroup = document.getElementById('logo-overlay-group');
+    
     // Background type buttons
     const btnBgSteam = document.getElementById('btn-bg-steam');
     const btnBgColor = document.getElementById('btn-bg-color');
@@ -36,12 +42,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Layout Preview elements
     const previewFrontTitle = document.getElementById('preview-front-title');
     const previewFrontAppid = document.getElementById('preview-front-appid');
+    const previewFrontLogo = document.getElementById('preview-front-logo');
     const previewBackTitle = document.getElementById('preview-back-title');
     const previewBackAppid = document.getElementById('preview-back-appid');
+    const previewBackLogo = document.getElementById('preview-back-logo');
     const previewSpineL = document.getElementById('preview-spine-l');
     const previewSpineR = document.getElementById('preview-spine-r');
     const previewDiscTitle = document.getElementById('preview-disc-title');
     const previewDiscAppid = document.getElementById('preview-disc-appid');
+    const previewDiscLogo = document.getElementById('preview-disc-logo');
     const barcodeAppid = document.getElementById('barcode-appid');
 
     // Cover Layers for backgrounds
@@ -172,6 +181,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Disc Label
         previewDiscTitle.textContent = titleText;
         previewDiscAppid.textContent = `AppID: ${appidText}`;
+        
+        updateLogoOverlay();
     }
 
     // Dynamically fetch and display background artwork
@@ -183,15 +194,66 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (activeBgType === 'steam') {
-            const coverUrl = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${selectedGame.appid}/library_600x900.jpg`;
+            steamStyleGroup.style.display = 'block';
+            logoOverlayGroup.style.display = 'block';
+
+            let assetPath = 'library_600x900.jpg';
+            if (steamArtStyle.value === 'hero') {
+                assetPath = 'library_hero.jpg';
+            } else if (steamArtStyle.value === 'header') {
+                assetPath = 'header.jpg';
+            }
+
+            const coverUrl = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${selectedGame.appid}/${assetPath}`;
             const proxiedUrl = `/api/proxy-image?url=${encodeURIComponent(coverUrl)}`;
             
             imageLayers.forEach(layer => {
                 layer.style.backgroundImage = `url('${proxiedUrl}')`;
             });
-        } else if (activeBgType === 'upload' && customImageBase64) {
-            imageLayers.forEach(layer => {
-                layer.style.backgroundImage = `url('${customImageBase64}')`;
+        } else {
+            steamStyleGroup.style.display = 'none';
+            logoOverlayGroup.style.display = 'none';
+
+            if (activeBgType === 'upload' && customImageBase64) {
+                imageLayers.forEach(layer => {
+                    layer.style.backgroundImage = `url('${customImageBase64}')`;
+                });
+            }
+        }
+
+        updateLogoOverlay();
+    }
+
+    // Updates logo transparent overlay graphic
+    function updateLogoOverlay() {
+        const useLogo = checkUseLogo.checked && activeBgType === 'steam' && selectedGame;
+
+        const logoElms = [
+            { logo: previewFrontLogo, text: previewFrontTitle },
+            { logo: previewBackLogo, text: previewBackTitle },
+            { logo: previewDiscLogo, text: previewDiscTitle }
+        ];
+
+        if (useLogo) {
+            const logoUrl = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${selectedGame.appid}/logo.png`;
+            const proxiedLogo = `/api/proxy-image?url=${encodeURIComponent(logoUrl)}`;
+
+            logoElms.forEach(item => {
+                item.logo.onload = () => {
+                    item.logo.style.display = 'block';
+                    item.text.style.display = 'none';
+                };
+                item.logo.onerror = () => {
+                    item.logo.style.display = 'none';
+                    item.text.style.display = 'block';
+                };
+                item.logo.src = proxiedLogo;
+            });
+        } else {
+            logoElms.forEach(item => {
+                item.logo.src = '';
+                item.logo.style.display = 'none';
+                item.text.style.display = 'block';
             });
         }
     }
@@ -239,6 +301,9 @@ document.addEventListener('DOMContentLoaded', () => {
     fontSelect.addEventListener('change', applyStyles);
     alignSelect.addEventListener('change', applyStyles);
     rangeOpacity.addEventListener('input', applyStyles);
+
+    steamArtStyle.addEventListener('change', updateBgArt);
+    checkUseLogo.addEventListener('change', updateLogoOverlay);
 
     btnBgSteam.addEventListener('click', () => {
         activeBgType = 'steam';
