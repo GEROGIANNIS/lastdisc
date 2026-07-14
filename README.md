@@ -89,20 +89,31 @@ To uninstall (from `setup/windows/`): `.\uninstall.ps1`
 
 ### Preparing a disc
 
-Find your game's Steam AppID (from the store URL:
-`store.steampowered.com/app/<APPID>/...`, or via SteamDB), then generate the
-manifest:
+Find your game's Steam AppID (from the store URL: `store.steampowered.com/app/<APPID>/...`, or via SteamDB), then generate the manifest.
 
-```bash
-# Linux
-./setup/linux/make_marker.sh 12345 "My Game" ./disc_root
+You can use the automated **CD Creator & Cover Editor** utility (requires Python 3) to search Steam, compile ISOs, and design/print cover layouts.
 
-# Windows
-.\setup\windows\make_marker.ps1 -AppId 12345 -Title "My Game" -OutDir .\disc_root
-```
+**Interactive CLI CD Creator:**
+- **Linux:** `./setup/linux/make_marker.sh`
+- **Windows:** `.\setup\windows\make_marker.ps1`
 
-Burn the contents of `disc_root/` to your disc (hybrid ISO9660/Joliet or UDF
-recommended so the label and filenames survive mounting on both OSes).
+This script queries local libraries and the online Steam Store, generates the launch manifest, and automatically compiles it into a burnable `.iso` file (if standard ISO tools like `genisoimage`, `mkisofs`, `xorriso`, or `oscdimg` are installed).
+
+**Graphical Cover Creator & Editor:**
+- **Linux:** `./setup/linux/make_marker.sh --gui`
+- **Windows:** `.\setup\windows\make_marker.ps1 -Gui`
+
+This launches a local web server (defaults to `http://localhost:8000`) and opens your web browser. Features include:
+- **Live Search**: Look up Steam games and automatically fetch vertical cover art.
+- **Visual Design Studio**: Customize titles, alignments, fonts, text overlays, and backgrounds. Generates Front Cover (120x120mm), Back Inlay & Spines (150x118mm), and CD Disc Surface (116mm diameter).
+- **Physical-Scale Print Layout**: Hit **Print Covers** to print your customized art at exact physical size.
+- **ISO Export**: Instantly download the compiled `.iso` with your `lastdisc.json` manifest.
+
+*Note: Legacy positional arguments are still supported for quick raw directory generation without Python:*
+- **Linux:** `./setup/linux/make_marker.sh 12345 "My Game" ./disc_root`
+- **Windows:** `.\setup\windows\make_marker.ps1 -AppId 12345 -Title "My Game" -OutDir .\disc_root`
+
+Burn the contents of the generated `.iso` or raw `disc_root/` folder to your physical disc (hybrid ISO9660/Joliet or UDF is recommended so filenames survive on both OSes).
 
 ## Requirements
 

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LastDisc CD Creator & Cover Editor</title>
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Top premium navigation bar -->
+    <header class="no-print">
+        <div class="logo">
+            <span class="logo-icon">💿</span>
+            <span class="logo-text">Last<span>Disc</span></span>
+        </div>
+        <div class="tagline">CD & Cover Creator</div>
+        <div class="actions">
+            <button id="btn-print" class="btn btn-primary" disabled>
+                <span class="icon">🖨️</span> Print Covers
+            </button>
+            <button id="btn-iso" class="btn btn-accent" disabled>
+                <span class="icon">💿</span> Download ISO
+            </button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <!-- Sidebar containing search and configuration controls -->
+        <aside class="sidebar no-print">
+            <!-- Game Search Section -->
+            <section class="search-section">
+                <h3>1. Search Steam Game</h3>
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="e.g. Portal 2, Half-Life...">
+                    <button id="search-button" class="btn-search">🔍</button>
+                </div>
+                <div id="search-results" class="search-results">
+                    <!-- Search results dynamically loaded here -->
+                    <div class="empty-state">Search for a game to start creating your CD cover and ISO manifest.</div>
+                </div>
+            </section>
+
+            <!-- Customization Editor Section -->
+            <section class="editor-section" id="editor-controls" style="display: none;">
+                <h3>2. Customize CD Details</h3>
+                
+                <div class="control-group">
+                    <label for="input-title">Game Title</label>
+                    <input type="text" id="input-title">
+                </div>
+
+                <div class="control-group">
+                    <label for="input-appid">Steam AppID</label>
+                    <input type="text" id="input-appid" readonly>
+                </div>
+
+                <div class="control-group">
+                    <label for="input-spine">Spine Text</label>
+                    <input type="text" id="input-spine" placeholder="Defaults to Title">
+                </div>
+
+                <div class="control-row">
+                    <div class="control-group">
+                        <label for="color-bg">Background Color</label>
+                        <input type="color" id="color-bg" value="#121214">
+                    </div>
+                    <div class="control-group">
+                        <label for="color-text">Text Color</label>
+                        <input type="color" id="color-text" value="#ffffff">
+                    </div>
+                </div>
+
+                <div class="control-row">
+                    <div class="control-group">
+                        <label for="font-family">Font Style</label>
+                        <select id="font-family">
+                            <option value="'Outfit', sans-serif">Outfit (Modern)</option>
+                            <option value="'Inter', sans-serif">Inter (Clean)</option>
+                            <option value="monospace">Console (Retro)</option>
+                            <option value="serif">Classic Serif</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="text-align">Text Align</label>
+                        <select id="text-align">
+                            <option value="left">Left</option>
+                            <option value="center" selected>Center</option>
+                            <option value="right">Right</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Cover Background Image</label>
+                    <div class="bg-options">
+                        <button id="btn-bg-steam" class="btn btn-sm btn-outline active">Steam Art</button>
+                        <button id="btn-bg-color" class="btn btn-sm btn-outline">Solid Color</button>
+                        <label for="upload-bg" class="btn btn-sm btn-outline file-label">
+                            Upload File
+                            <input type="file" id="upload-bg" accept="image/*" style="display: none;">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label for="input-overlay-opacity">Art Overlay Opacity (Darken)</label>
+                    <input type="range" id="input-overlay-opacity" min="0" max="90" value="30">
+                </div>
+
+                <div class="status-box" id="iso-status" style="display: none;">
+                    <div class="spinner"></div>
+                    <span id="status-text">Generating CD ISO image...</span>
+                </div>
+            </section>
+        </aside>
+
+        <!-- Main Workspace displaying interactive CD items -->
+        <main class="workspace">
+            <div class="no-print tabs-container">
+                <button class="tab-btn active" data-target="workspace-all">All Covers</button>
+                <button class="tab-btn" data-target="workspace-front">Front Insert</button>
+                <button class="tab-btn" data-target="workspace-back">Back Inlay & Spine</button>
+                <button class="tab-btn" data-target="workspace-disc">CD Disc Print</button>
+            </div>
+
+            <div id="editor-workspace" class="editor-workspace">
+                <!-- Front Insert (120mm x 120mm) -->
+                <div class="printable-item-container" id="container-front">
+                    <h4 class="no-print">Front Cover (120mm x 120mm)</h4>
+                    <div class="cd-front" id="cd-front">
+                        <div class="cd-image-layer"></div>
+                        <div class="cd-overlay-layer"></div>
+                        <div class="cd-text-content">
+                            <h1 id="preview-front-title">Game Title</h1>
+                            <div class="cd-front-badge">
+                                <span class="badge-icon">💿</span>
+                                <span class="badge-text">Steam launcher</span>
+                            </div>
+                            <div class="cd-appid-label" id="preview-front-appid">AppID: 00000</div>
+                        </div>
+                        <div class="cut-guide cut-tl"></div>
+                        <div class="cut-guide cut-tr"></div>
+                        <div class="cut-guide cut-bl"></div>
+                        <div class="cut-guide cut-br"></div>
+                    </div>
+                </div>
+
+                <!-- Back Inlay with Spine (150mm x 118mm) -->
+                <div class="printable-item-container" id="container-back">
+                    <h4 class="no-print">Back Inlay & Spines (150mm x 118mm)</h4>
+                    <div class="cd-back" id="cd-back">
+                        <!-- Left Spine (6mm wide) -->
+                        <div class="cd-spine spine-left" id="spine-l">
+                            <span class="spine-text" id="preview-spine-l">Game Title</span>
+                        </div>
+                        
+                        <!-- Main Back Area (138mm wide) -->
+                        <div class="cd-back-main">
+                            <div class="cd-image-layer"></div>
+                            <div class="cd-overlay-layer"></div>
+                            <div class="cd-text-content">
+                                <div class="back-logo">
+                                    <span class="logo-icon">💿</span> LastDisc
+                                </div>
+                                <h2 id="preview-back-title">Game Title</h2>
+                                <div class="back-game-info">
+                                    <div class="back-spec">SYSTEM: Steam Launcher</div>
+                                    <div class="back-spec" id="preview-back-appid">STEAM APPID: 00000</div>
+                                </div>
+                                <div class="back-instructions">
+                                    <p>Insert disc into drive. Background watcher launches game automatically via Steam URI protocol. Safe, fast, physical.</p>
+                                </div>
+                                <div class="barcode">
+                                    <div class="barcode-lines"></div>
+                                    <div class="barcode-text" id="barcode-appid">000000000000</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Right Spine (6mm wide) -->
+                        <div class="cd-spine spine-right" id="spine-r">
+                            <span class="spine-text" id="preview-spine-r">Game Title</span>
+                        </div>
+
+                        <!-- Cut marks -->
+                        <div class="fold-line fold-l"></div>
+                        <div class="fold-line fold-r"></div>
+                        <div class="cut-guide cut-tl"></div>
+                        <div class="cut-guide cut-tr"></div>
+                        <div class="cut-guide cut-bl"></div>
+                        <div class="cut-guide cut-br"></div>
+                    </div>
+                </div>
+
+                <!-- Disc Label (116mm diameter) -->
+                <div class="printable-item-container" id="container-disc">
+                    <h4 class="no-print">CD Disc Surface Label (116mm diameter)</h4>
+                    <div class="cd-disc" id="cd-disc">
+                        <div class="cd-image-layer"></div>
+                        <div class="cd-overlay-layer"></div>
+                        
+                        <!-- Center hole cutouts -->
+                        <div class="cd-center-hole-outer"></div>
+                        <div class="cd-center-hole-inner"></div>
+                        
+                        <div class="cd-disc-content">
+                            <div class="disc-header">LastDisc Launcher</div>
+                            <h2 id="preview-disc-title">Game Title</h2>
+                            <div class="disc-footer" id="preview-disc-appid">AppID: 00000</div>
+                            <div class="disc-disclaimer">FOR USE IN REGISTERED OPTICAL DRIVE. OWNED & LICENSED ON STEAM.</div>
+                        </div>
+                        <div class="cut-guide cut-tl"></div>
+                        <div class="cut-guide cut-tr"></div>
+                        <div class="cut-guide cut-bl"></div>
+                        <div class="cut-guide cut-br"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
