@@ -992,9 +992,21 @@ header {
     border-right: 1px dashed rgba(255, 255, 255, 0.15);
     position: relative;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     box-sizing: border-box;
+    padding: 10mm 0;
+}
+
+.dvd-spine-logo {
+    max-width: 80%;
+    max-height: 45mm;
+    object-fit: contain;
+    transform: rotate(90deg);
+    filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.8));
+    margin-bottom: 8mm;
+    z-index: 3;
 }
 
 .dvd-spine .spine-text {

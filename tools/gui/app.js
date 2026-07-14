@@ -85,6 +85,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const previewDiscLogo = document.getElementById('preview-disc-logo');
     const barcodeAppid = document.getElementById('barcode-appid');
 
+    // DVD Wraparound Preview elements
+    const previewDvdBackTitle = document.getElementById('preview-dvd-back-title');
+    const previewDvdBackAppid = document.getElementById('preview-dvd-back-appid');
+    const previewDvdBackLogo = document.getElementById('preview-dvd-back-logo');
+    const previewDvdBackRequirements = document.getElementById('preview-dvd-back-requirements');
+    const previewDvdRequirementsContent = document.getElementById('preview-dvd-requirements-content');
+    const previewDvdBackInstructions = document.getElementById('preview-dvd-back-instructions');
+    const dvdBarcodeAppid = document.getElementById('dvd-barcode-appid');
+    const previewDvdSpine = document.getElementById('preview-dvd-spine');
+    const previewDvdSpineLogo = document.getElementById('preview-dvd-spine-logo');
+    const previewDvdFrontTitle = document.getElementById('preview-dvd-front-title');
+    const previewDvdFrontAppid = document.getElementById('preview-dvd-front-appid');
+    const previewDvdFrontLogo = document.getElementById('preview-dvd-front-logo');
+
     // Cover Layers for backgrounds
     const cdFront = document.getElementById('cd-front');
     const cdBack = document.getElementById('cd-back');
@@ -289,29 +303,48 @@ document.addEventListener('DOMContentLoaded', () => {
         previewDiscTitle.textContent = titleText;
         previewDiscAppid.textContent = `AppID: ${appidText}`;
 
+        // DVD Wraparound Cover Text Mirroring
+        if (previewDvdSpine) previewDvdSpine.textContent = spineText;
+        if (previewDvdFrontTitle) previewDvdFrontTitle.textContent = titleText;
+        if (previewDvdFrontAppid) previewDvdFrontAppid.textContent = `AppID: ${appidText}`;
+        if (previewDvdBackTitle) previewDvdBackTitle.textContent = titleText;
+        if (previewDvdBackAppid) previewDvdBackAppid.textContent = `STEAM APPID: ${appidText}`;
+        if (dvdBarcodeAppid) dvdBarcodeAppid.textContent = appidText.padStart(12, '0');
+
         // System Requirements display logic
         const showReqs = layoutConfigs.back.showRequirements;
         if (showReqs && layoutConfigs.back.requirements) {
             previewBackRequirements.style.display = "block";
             previewRequirementsContent.textContent = layoutConfigs.back.requirements;
             previewBackInstructions.classList.add("compact");
+
+            if (previewDvdBackRequirements) {
+                previewDvdBackRequirements.style.display = "block";
+                previewDvdRequirementsContent.textContent = layoutConfigs.back.requirements;
+                previewDvdBackInstructions.classList.add("compact");
+            }
         } else {
             previewBackRequirements.style.display = "none";
             previewBackInstructions.classList.remove("compact");
+
+            if (previewDvdBackRequirements) {
+                previewDvdBackRequirements.style.display = "none";
+                previewDvdBackInstructions.classList.remove("compact");
+            }
         }
 
-        // Generate dynamic vector barcode matching AppID
-        generateBarcode(appidText);
+        // Generate dynamic vector barcodes matching AppID
+        generateBarcode(appidText, '.barcode-lines');
         
         ['front', 'back', 'disc'].forEach(layout => {
             updateLayoutLogo(layout);
         });
     }
 
-    // Generate vector Code 39 barcode dynamically based on AppID
-    function generateBarcode(appidText) {
-        const barcodeLinesContainer = document.querySelector('.barcode-lines');
-        if (!barcodeLinesContainer) return;
+    // Generate vector Code 39 barcode dynamically inside target containers
+    function generateBarcode(appidText, containerSelector = '.barcode-lines') {
+        const barcodeLinesContainers = document.querySelectorAll(containerSelector);
+        if (barcodeLinesContainers.length === 0) return;
         
         let cleanAppid = appidText.replace(/[^0-9]/g, '');
         if (cleanAppid.length < 8) {
@@ -334,40 +367,43 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         
         const fullCode = '*' + cleanAppid + '*';
-        barcodeLinesContainer.innerHTML = '';
         
-        let patternSequence = [];
-        for (let i = 0; i < fullCode.length; i++) {
-            const char = fullCode[i];
-            const representation = code39[char] || code39['*'];
-            const elements = representation.split(' ');
+        barcodeLinesContainers.forEach(barcodeLinesContainer => {
+            barcodeLinesContainer.innerHTML = '';
             
-            for (let j = 0; j < elements.length; j++) {
-                const isBlack = (j % 2 === 0);
-                const isWide = (elements[j] === 'W');
-                patternSequence.push({ isBlack, isWide });
+            let patternSequence = [];
+            for (let i = 0; i < fullCode.length; i++) {
+                const char = fullCode[i];
+                const representation = code39[char] || code39['*'];
+                const elements = representation.split(' ');
+                
+                for (let j = 0; j < elements.length; j++) {
+                    const isBlack = (j % 2 === 0);
+                    const isWide = (elements[j] === 'W');
+                    patternSequence.push({ isBlack, isWide });
+                }
+                
+                // Add narrow space between characters
+                if (i < fullCode.length - 1) {
+                    patternSequence.push({ isBlack: false, isWide: false });
+                }
             }
             
-            // Add narrow space between characters
-            if (i < fullCode.length - 1) {
-                patternSequence.push({ isBlack: false, isWide: false });
-            }
-        }
-        
-        let totalUnits = 0;
-        patternSequence.forEach(bar => {
-            totalUnits += bar.isWide ? 2.5 : 1.0;
-        });
-        
-        patternSequence.forEach(bar => {
-            const barDiv = document.createElement('div');
-            const weight = bar.isWide ? 2.5 : 1.0;
-            const widthPct = (weight / totalUnits) * 100;
+            let totalUnits = 0;
+            patternSequence.forEach(bar => {
+                totalUnits += bar.isWide ? 2.5 : 1.0;
+            });
             
-            barDiv.style.width = `${widthPct}%`;
-            barDiv.style.height = '100%';
-            barDiv.style.backgroundColor = bar.isBlack ? '#000000' : '#ffffff';
-            barcodeLinesContainer.appendChild(barDiv);
+            patternSequence.forEach(bar => {
+                const barDiv = document.createElement('div');
+                const weight = bar.isWide ? 2.5 : 1.0;
+                const widthPct = (weight / totalUnits) * 100;
+                
+                barDiv.style.width = `${widthPct}%`;
+                barDiv.style.height = '100%';
+                barDiv.style.backgroundColor = bar.isBlack ? '#000000' : '#ffffff';
+                barcodeLinesContainer.appendChild(barDiv);
+            });
         });
     }
 
@@ -491,6 +527,11 @@ document.addEventListener('DOMContentLoaded', () => {
             
             let dvdBaseHeight = baseMaxHeight * 1.2;
             applyLogo(dvdLogo, dvdTextHeader, dvdBaseHeight);
+        }
+
+        // Mirror front logo configuration to DVD spine logo
+        if (layout === 'front' && previewDvdSpineLogo && previewDvdSpine) {
+            applyLogo(previewDvdSpineLogo, previewDvdSpine, 45);
         }
     }
 
