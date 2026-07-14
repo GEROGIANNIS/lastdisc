@@ -375,22 +375,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateLayoutBackground(layout) {
         if (!selectedGame) return;
 
-        const container = document.getElementById(`cd-${layout}`);
-        if (!container) return;
-        const layer = container.querySelector('.cd-image-layer');
-        if (!layer) return;
-
         const config = layoutConfigs[layout];
 
         // Hide/show the options groups in the HTML accordion details block
         const steamStyleGroup = document.getElementById(`${layout}-steam-style-group`);
         const logoOverlayGroup = document.getElementById(`${layout}-logo-overlay-group`);
         const logoSizeGroup = document.getElementById(`${layout}-logo-size-group`);
-
-        layer.style.backgroundImage = 'none';
-
-        // Apply background zoom factor
-        layer.style.transform = `scale(${config.bgZoom / 100})`;
 
         // Update background zoom label indicators
         const zoomValSpan = document.getElementById(`${layout}-bg-zoom-val`);
@@ -400,24 +390,44 @@ document.addEventListener('DOMContentLoaded', () => {
             if (steamStyleGroup) steamStyleGroup.style.display = 'block';
             if (logoOverlayGroup) logoOverlayGroup.style.display = 'block';
             if (logoSizeGroup) logoSizeGroup.style.display = 'block';
-
-            let assetPath = 'library_600x900.jpg';
-            if (config.artStyle === 'hero') {
-                assetPath = 'library_hero.jpg';
-            } else if (config.artStyle === 'header') {
-                assetPath = 'header.jpg';
-            }
-
-            const coverUrl = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${selectedGame.appid}/${assetPath}`;
-            const proxiedUrl = `/api/proxy-image?url=${encodeURIComponent(coverUrl)}`;
-            layer.style.backgroundImage = `url('${proxiedUrl}')`;
         } else {
             if (steamStyleGroup) steamStyleGroup.style.display = 'none';
             if (logoOverlayGroup) logoOverlayGroup.style.display = 'none';
             if (logoSizeGroup) logoSizeGroup.style.display = 'none';
+        }
 
-            if (config.bgType === 'upload' && config.customImage) {
+        const applyBg = (layer) => {
+            if (!layer) return;
+            layer.style.backgroundImage = 'none';
+            layer.style.transform = `scale(${config.bgZoom / 100})`;
+
+            if (config.bgType === 'steam') {
+                let assetPath = 'library_600x900.jpg';
+                if (config.artStyle === 'hero') {
+                    assetPath = 'library_hero.jpg';
+                } else if (config.artStyle === 'header') {
+                    assetPath = 'header.jpg';
+                }
+
+                const coverUrl = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${selectedGame.appid}/${assetPath}`;
+                const proxiedUrl = `/api/proxy-image?url=${encodeURIComponent(coverUrl)}`;
+                layer.style.backgroundImage = `url('${proxiedUrl}')`;
+            } else if (config.bgType === 'upload' && config.customImage) {
                 layer.style.backgroundImage = `url('${config.customImage}')`;
+            }
+        };
+
+        // Standard
+        const container = document.getElementById(`cd-${layout}`);
+        if (container) {
+            applyBg(container.querySelector('.cd-image-layer'));
+        }
+
+        // Mirror to DVD wrap panel if case size is dvd
+        if (layout === 'front' || layout === 'back') {
+            const dvdPanel = document.querySelector(`.dvd-${layout}-panel`);
+            if (dvdPanel) {
+                applyBg(dvdPanel.querySelector('.cd-image-layer'));
             }
         }
     }
@@ -427,88 +437,116 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!selectedGame) return;
 
         const config = layoutConfigs[layout];
-        const logoImg = document.getElementById(`preview-${layout}-logo`);
-        
-        let textHeader;
-        if (layout === 'front') {
-            textHeader = previewFrontTitle;
-        } else if (layout === 'back') {
-            textHeader = previewBackTitle;
-        } else if (layout === 'disc') {
-            textHeader = previewDiscTitle;
-        }
-
-        if (!logoImg || !textHeader) return;
-
-        const useLogo = config.useLogo && config.bgType === 'steam';
 
         // Update logo size label indicators
         const logoSizeValSpan = document.getElementById(`${layout}-logo-size-val`);
         if (logoSizeValSpan) logoSizeValSpan.textContent = config.logoSize;
 
-        if (useLogo) {
-            const logoUrl = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${selectedGame.appid}/logo.png`;
-            const proxiedLogo = `/api/proxy-image?url=${encodeURIComponent(logoUrl)}`;
+        const applyLogo = (logoImg, textHeader, baseMaxHeight) => {
+            if (!logoImg || !textHeader) return;
+            
+            const useLogo = config.useLogo && config.bgType === 'steam';
 
-            // Apply logo size scaling factor (bases: front: 55px, back: 40px, disc: 35px)
-            let baseMaxHeight = 40;
-            if (layout === 'front') baseMaxHeight = 55;
-            if (layout === 'disc') baseMaxHeight = 35;
-            logoImg.style.maxHeight = `${baseMaxHeight * (config.logoSize / 100)}px`;
+            if (useLogo) {
+                const logoUrl = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${selectedGame.appid}/logo.png`;
+                const proxiedLogo = `/api/proxy-image?url=${encodeURIComponent(logoUrl)}`;
 
-            logoImg.onload = () => {
-                logoImg.style.display = 'block';
-                textHeader.style.display = 'none';
-            };
-            logoImg.onerror = () => {
+                logoImg.style.maxHeight = `${baseMaxHeight * (config.logoSize / 100)}px`;
+
+                logoImg.onload = () => {
+                    logoImg.style.display = 'block';
+                    textHeader.style.display = 'none';
+                };
+                logoImg.onerror = () => {
+                    logoImg.style.display = 'none';
+                    textHeader.style.display = 'block';
+                };
+                logoImg.src = proxiedLogo;
+            } else {
+                logoImg.src = '';
                 logoImg.style.display = 'none';
                 textHeader.style.display = 'block';
-            };
-            logoImg.src = proxiedLogo;
-        } else {
-            logoImg.src = '';
-            logoImg.style.display = 'none';
-            textHeader.style.display = 'block';
+            }
+        };
+
+        // Standard
+        const logoImg = document.getElementById(`preview-${layout}-logo`);
+        let textHeader;
+        if (layout === 'front') textHeader = previewFrontTitle;
+        else if (layout === 'back') textHeader = previewBackTitle;
+        else if (layout === 'disc') textHeader = previewDiscTitle;
+
+        let baseMaxHeight = 40;
+        if (layout === 'front') baseMaxHeight = 55;
+        if (layout === 'disc') baseMaxHeight = 35;
+
+        applyLogo(logoImg, textHeader, baseMaxHeight);
+
+        // Mirror to DVD wrap panel if case size is dvd
+        if (layout === 'front' || layout === 'back') {
+            const dvdLogo = document.getElementById(`preview-dvd-${layout}-logo`);
+            let dvdTextHeader;
+            if (layout === 'front') dvdTextHeader = document.getElementById('preview-dvd-front-title');
+            else if (layout === 'back') dvdTextHeader = document.getElementById('preview-dvd-back-title');
+            
+            let dvdBaseHeight = baseMaxHeight * 1.2;
+            applyLogo(dvdLogo, dvdTextHeader, dvdBaseHeight);
         }
     }
 
     // Apply styling parameters for a specific layout
     function applyLayoutStyles(layout) {
         const config = layoutConfigs[layout];
-        const container = document.getElementById(`cd-${layout}`);
-        if (!container) return;
 
-        // Apply bg color override
-        container.style.backgroundColor = config.bgColor;
+        const applyStyles = (container) => {
+            if (!container) return;
 
-        // Apply text color override
-        container.style.color = config.textColor;
+            // Apply bg color override
+            container.style.backgroundColor = config.bgColor;
 
-        // Apply global fonts and alignments
-        const fontVal = fontSelect.value;
-        container.style.fontFamily = fontVal;
+            // Apply text color override
+            container.style.color = config.textColor;
 
-        // Text align (Front and Disc are aligned globally, Back has custom details)
-        if (layout === 'front' || layout === 'disc') {
-            const alignVal = alignSelect.value;
-            const textContent = container.querySelector('.cd-text-content, .cd-disc-content');
-            if (textContent) {
-                textContent.style.textAlign = alignVal;
-                textContent.style.alignItems = alignVal === 'center' ? 'center' : (alignVal === 'right' ? 'flex-end' : 'flex-start');
-            }
+            // Apply global fonts and alignments
+            const fontVal = fontSelect.value;
+            container.style.fontFamily = fontVal;
 
-            if (layout === 'front') {
-                const badge = container.querySelector('.cd-front-badge');
-                if (badge) {
-                    badge.style.alignSelf = alignVal === 'center' ? 'center' : (alignVal === 'right' ? 'flex-end' : 'flex-start');
+            // Text align (Front and Disc are aligned globally, Back has custom details)
+            if (layout === 'front' || layout === 'disc') {
+                const alignVal = alignSelect.value;
+                const textContent = container.querySelector('.cd-text-content, .cd-disc-content');
+                if (textContent) {
+                    textContent.style.textAlign = alignVal;
+                    textContent.style.alignItems = alignVal === 'center' ? 'center' : (alignVal === 'right' ? 'flex-end' : 'flex-start');
+                }
+
+                if (layout === 'front') {
+                    const badge = container.querySelector('.cd-front-badge');
+                    if (badge) {
+                        badge.style.alignSelf = alignVal === 'center' ? 'center' : (alignVal === 'right' ? 'flex-end' : 'flex-start');
+                    }
                 }
             }
+
+            // Apply overlay opacity darkening
+            const overlay = container.querySelector('.cd-overlay-layer');
+            if (overlay) {
+                overlay.style.backgroundColor = `rgba(10, 10, 12, ${config.opacity / 100})`;
+            }
+        };
+
+        // Standard
+        const container = document.getElementById(`cd-${layout}`);
+        if (container) {
+            applyStyles(container);
         }
 
-        // Apply overlay opacity darkening
-        const overlay = container.querySelector('.cd-overlay-layer');
-        if (overlay) {
-            overlay.style.backgroundColor = `rgba(10, 10, 12, ${config.opacity / 100})`;
+        // Mirror to DVD wrap panel if case size is dvd
+        if (layout === 'front' || layout === 'back') {
+            const dvdPanel = document.querySelector(`.dvd-${layout}-panel`);
+            if (dvdPanel) {
+                applyStyles(dvdPanel);
+            }
         }
     }
 
@@ -518,11 +556,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
     caseSizeSelect.addEventListener('change', (e) => {
         const val = e.target.value;
-        if (val === 'ps1pal') {
-            editorWorkspace.classList.add('case-ps1pal');
+        
+        // Remove existing case classes
+        editorWorkspace.classList.remove('case-ps1pal', 'case-dvd');
+        
+        const containerFront = document.getElementById('container-front');
+        const containerBack = document.getElementById('container-back');
+        const containerDvd = document.getElementById('container-dvd');
+        
+        const tabBtnFront = document.getElementById('tab-btn-front');
+        const tabBtnBack = document.getElementById('tab-btn-back');
+        const tabBtnDvd = document.getElementById('tab-btn-dvd');
+        
+        if (val === 'dvd') {
+            editorWorkspace.classList.add('case-dvd');
+            containerFront.style.display = 'none';
+            containerBack.style.display = 'none';
+            containerDvd.style.display = 'block';
+            
+            tabBtnFront.style.display = 'none';
+            tabBtnBack.style.display = 'none';
+            tabBtnDvd.style.display = 'inline-block';
+            
+            // Revert Front/Back tabs to All if active
+            const activeBtn = document.querySelector('.tab-btn.active');
+            if (activeBtn && (activeBtn.dataset.target === 'workspace-front' || activeBtn.dataset.target === 'workspace-back')) {
+                document.querySelector('.tab-btn[data-target="workspace-all"]').click();
+            }
         } else {
-            editorWorkspace.classList.remove('case-ps1pal');
+            if (val === 'ps1pal') {
+                editorWorkspace.classList.add('case-ps1pal');
+            }
+            containerFront.style.display = 'block';
+            containerBack.style.display = 'block';
+            containerDvd.style.display = 'none';
+            
+            tabBtnFront.style.display = 'inline-block';
+            tabBtnBack.style.display = 'inline-block';
+            tabBtnDvd.style.display = 'none';
+            
+            // Revert DVD tab to All if active
+            const activeBtn = document.querySelector('.tab-btn.active');
+            if (activeBtn && activeBtn.dataset.target === 'workspace-dvd') {
+                document.querySelector('.tab-btn[data-target="workspace-all"]').click();
+            }
         }
+        
+        refreshAllLayouts();
+        updateLayoutContent();
     });
 
     // Global typography selections
@@ -646,7 +727,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const target = btn.getAttribute('data-target');
             
-            editorWorkspace.classList.remove('workspace-all', 'workspace-front', 'workspace-back', 'workspace-disc');
+            editorWorkspace.classList.remove('workspace-all', 'workspace-front', 'workspace-back', 'workspace-disc', 'workspace-dvd');
             editorWorkspace.classList.add(target);
         });
     });

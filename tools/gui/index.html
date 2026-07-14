@@ -52,7 +52,8 @@
                     <label for="case-size-select">Case Size Format</label>
                     <select id="case-size-select">
                         <option value="standard" selected>Standard CD / US PS1 Jewel Case (10mm)</option>
-                        <option value="ps1pal">PlayStation PAL Case (17mm thick)</option>
+                        <option value="ps1pal">PlayStation 1 PAL Case (17mm thick)</option>
+                        <option value="dvd">PlayStation 2 / DVD Case Wrap (14mm Amaray)</option>
                     </select>
                 </div>
                 
@@ -292,8 +293,9 @@
         <main class="workspace">
             <div class="no-print tabs-container">
                 <button class="tab-btn active" data-target="workspace-all">All Covers</button>
-                <button class="tab-btn" data-target="workspace-front">Front Insert</button>
-                <button class="tab-btn" data-target="workspace-back">Back Inlay & Spine</button>
+                <button class="tab-btn" data-target="workspace-front" id="tab-btn-front">Front Insert</button>
+                <button class="tab-btn" data-target="workspace-back" id="tab-btn-back">Back Inlay & Spine</button>
+                <button class="tab-btn" data-target="workspace-dvd" id="tab-btn-dvd" style="display: none;">DVD Case Wrap</button>
                 <button class="tab-btn" data-target="workspace-disc">CD Disc Print</button>
             </div>
 
@@ -365,6 +367,69 @@
                         <!-- Cut marks -->
                         <div class="fold-line fold-l"></div>
                         <div class="fold-line fold-r"></div>
+                        <div class="cut-guide cut-tl"></div>
+                        <div class="cut-guide cut-tr"></div>
+                        <div class="cut-guide cut-bl"></div>
+                        <div class="cut-guide cut-br"></div>
+                </div>
+
+                <!-- DVD/PS2 Wraparound Cover (273mm x 183mm) -->
+                <div class="printable-item-container" id="container-dvd" style="display: none;">
+                    <h4 class="no-print">PlayStation 2 / DVD Case Wrap (273mm x 183mm)</h4>
+                    <div class="dvd-wrap" id="cd-dvd">
+                        <!-- DVD Back Panel (129.5mm wide) -->
+                        <div class="dvd-panel dvd-back-panel">
+                            <div class="cd-image-layer"></div>
+                            <div class="cd-overlay-layer"></div>
+                            
+                            <div class="cd-text-content">
+                                <div class="back-logo">
+                                    <span class="logo-icon">💿</span> LastDisc
+                                </div>
+                                <img id="preview-dvd-back-logo" class="cd-logo-image" style="display: none;" alt="Game Logo">
+                                <h2 id="preview-dvd-back-title">Game Title</h2>
+                                <div class="back-game-info">
+                                    <div class="back-spec">SYSTEM: Steam Launcher</div>
+                                    <div class="back-spec" id="preview-dvd-back-appid">STEAM APPID: 00000</div>
+                                </div>
+                                <div class="back-requirements" id="preview-dvd-back-requirements" style="display: none;">
+                                    <div class="req-title">SYSTEM REQUIREMENTS</div>
+                                    <div class="req-content" id="preview-dvd-requirements-content"></div>
+                                </div>
+                                <div class="back-instructions" id="preview-dvd-back-instructions">
+                                    <p>Insert disc into drive. Background watcher launches game automatically via Steam URI protocol. Safe, fast, physical.</p>
+                                </div>
+                                <div class="barcode">
+                                    <div class="barcode-lines"></div>
+                                    <div class="barcode-text" id="dvd-barcode-appid">000000000000</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- DVD Spine (14mm wide) -->
+                        <div class="dvd-spine">
+                            <span class="spine-text" id="preview-dvd-spine">Game Title</span>
+                        </div>
+                        
+                        <!-- DVD Front Panel (129.5mm wide) -->
+                        <div class="dvd-panel dvd-front-panel">
+                            <div class="cd-image-layer"></div>
+                            <div class="cd-overlay-layer"></div>
+                            
+                            <div class="cd-text-content">
+                                <img id="preview-dvd-front-logo" class="cd-logo-image" style="display: none;" alt="Game Logo">
+                                <h1 id="preview-dvd-front-title">Game Title</h1>
+                                <div class="cd-front-badge">
+                                    <span class="badge-icon">💿</span>
+                                    <span class="badge-text">Steam launcher</span>
+                                </div>
+                                <div class="cd-appid-label" id="preview-dvd-front-appid">AppID: 00000</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Cut guides and fold lines -->
+                        <div class="fold-line dvd-fold-l"></div>
+                        <div class="fold-line dvd-fold-r"></div>
                         <div class="cut-guide cut-tl"></div>
                         <div class="cut-guide cut-tr"></div>
                         <div class="cut-guide cut-bl"></div>

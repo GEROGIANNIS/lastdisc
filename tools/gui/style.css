@@ -960,6 +960,71 @@ header {
     right: 13mm;
 }
 
+/* PlayStation 2 / DVD Case Sizing & Styling */
+.dvd-wrap {
+    width: 273mm;
+    height: 183mm;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    background-color: #121214;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+}
+
+.dvd-panel {
+    width: 129.5mm;
+    height: 183mm;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 10mm 12mm;
+    box-sizing: border-box;
+}
+
+.dvd-spine {
+    width: 14mm;
+    height: 183mm;
+    background-color: rgba(255, 255, 255, 0.03);
+    border-left: 1px dashed rgba(255, 255, 255, 0.15);
+    border-right: 1px dashed rgba(255, 255, 255, 0.15);
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+.dvd-spine .spine-text {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family: var(--font-heading);
+    font-size: 11pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    white-space: nowrap;
+    letter-spacing: 1px;
+    opacity: 0.85;
+}
+
+.dvd-fold-l { left: 129.5mm; }
+.dvd-fold-r { right: 129.5mm; }
+
+/* Filter display tabs for DVD workspace */
+.workspace-dvd #container-front,
+.workspace-dvd #container-back,
+.workspace-dvd #container-disc {
+    display: none !important;
+}
+
+.workspace-front #container-dvd,
+.workspace-back #container-dvd,
+.workspace-disc #container-dvd {
+    display: none !important;
+}
+
 /* ========================================================
    PRINT SPECIFIC CSS RULES (100% SCALE PRINTING IN MM)
    ======================================================== */
@@ -1010,7 +1075,7 @@ header {
         display: block !important;
     }
     
-    .cd-front, .cd-back, .cd-disc {
+    .cd-front, .cd-back, .cd-disc, .dvd-wrap {
         box-shadow: none !important;
         border: 1px solid #ddd !important;
     }
