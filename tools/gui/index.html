@@ -199,6 +199,18 @@
                             <label for="back-logo-size">Logo Size: <span id="back-logo-size-val">100</span>%</label>
                             <input type="range" id="back-logo-size" class="logo-size-range" min="30" max="200" value="100" data-layout="back">
                         </div>
+
+                        <div class="control-group">
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="back-show-requirements" class="requirements-checkbox" data-layout="back">
+                                <span>Show System Requirements</span>
+                            </label>
+                        </div>
+
+                        <div class="control-group" id="back-requirements-textarea-group" style="display: none;">
+                            <label for="back-requirements-text">Edit Requirements</label>
+                            <textarea id="back-requirements-text" rows="4" style="width: 100%; background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); color: #fff; border-radius: 4px; padding: 0.4rem; font-size: 0.8rem; resize: vertical;" placeholder="Minimum System Requirements details..."></textarea>
+                        </div>
                     </div>
                 </details>
 
@@ -323,7 +335,11 @@
                                     <div class="back-spec">SYSTEM: Steam Launcher</div>
                                     <div class="back-spec" id="preview-back-appid">STEAM APPID: 00000</div>
                                 </div>
-                                <div class="back-instructions">
+                                <div class="back-requirements" id="preview-back-requirements" style="display: none;">
+                                    <div class="req-title">SYSTEM REQUIREMENTS</div>
+                                    <div class="req-content" id="preview-requirements-content"></div>
+                                </div>
+                                <div class="back-instructions" id="preview-back-instructions">
                                     <p>Insert disc into drive. Background watcher launches game automatically via Steam URI protocol. Safe, fast, physical.</p>
                                 </div>
                                 <div class="barcode">

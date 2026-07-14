@@ -26,7 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
             textColor: '#ffffff',
             opacity: 30,
             bgZoom: 100,
-            logoSize: 100
+            logoSize: 100,
+            showRequirements: false,
+            requirements: ""
         },
         disc: {
             bgType: 'steam',
@@ -54,6 +56,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const fontSelect = document.getElementById('font-family');
     const alignSelect = document.getElementById('text-align');
 
+    // System Requirements Inputs
+    const backShowRequirements = document.getElementById('back-show-requirements');
+    const backRequirementsTextarea = document.getElementById('back-requirements-text');
+    const backRequirementsTextareaGroup = document.getElementById('back-requirements-textarea-group');
+
     // Action buttons
     const btnPrint = document.getElementById('btn-print');
     const btnIso = document.getElementById('btn-iso');
@@ -67,6 +74,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const previewBackTitle = document.getElementById('preview-back-title');
     const previewBackAppid = document.getElementById('preview-back-appid');
     const previewBackLogo = document.getElementById('preview-back-logo');
+    const previewBackRequirements = document.getElementById('preview-back-requirements');
+    const previewRequirementsContent = document.getElementById('preview-requirements-content');
+    const previewBackInstructions = document.getElementById('preview-back-instructions');
     const previewSpineL = document.getElementById('preview-spine-l');
     const previewSpineR = document.getElementById('preview-spine-r');
     const previewDiscTitle = document.getElementById('preview-disc-title');
@@ -157,6 +167,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Helper function to clean raw Steam HTML system requirements into formatted plain text
+    function cleanRequirementsHtml(html) {
+        if (!html) return "";
+        
+        // Remove "Minimum:" headers
+        let clean = html.replace(/<strong>Minimum:<\/strong><br>|Minimum:<br>/i, "");
+        
+        // Convert list items to bullet points
+        clean = clean.replace(/<li>/g, "• ");
+        clean = clean.replace(/<\/li>/g, "\n");
+        
+        // Convert br tags to newlines
+        clean = clean.replace(/<br\s*\/?>/g, "\n");
+        
+        // Strip any other markup
+        clean = clean.replace(/<[^>]*>/g, "");
+        
+        // Clean multiple newlines
+        clean = clean.trim().replace(/\n\s*\n+/g, "\n");
+        
+        return clean;
+    }
+
     // Select game and initialize Editor Controls
     function selectGame(game) {
         selectedGame = game;
@@ -168,6 +201,13 @@ document.addEventListener('DOMContentLoaded', () => {
             layoutConfigs[layout].bgZoom = 100;
             layoutConfigs[layout].logoSize = 100;
         });
+
+        // Reset system requirements
+        layoutConfigs.back.showRequirements = false;
+        layoutConfigs.back.requirements = "";
+        backShowRequirements.checked = false;
+        backRequirementsTextarea.value = "";
+        backRequirementsTextareaGroup.style.display = "none";
 
         editorControls.style.display = 'block';
         btnPrint.disabled = false;
@@ -192,6 +232,22 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.logo-size-range').forEach(input => input.value = 100);
         document.querySelectorAll('[id$="-bg-zoom-val"]').forEach(span => span.textContent = '100');
         document.querySelectorAll('[id$="-logo-size-val"]').forEach(span => span.textContent = '100');
+
+        // Fetch dynamic system requirements details from local details API proxy
+        fetch(`/api/game-details?appid=${game.appid}`)
+            .then(res => res.json())
+            .then(detail => {
+                if (detail && detail.requirements) {
+                    const cleaned = cleanRequirementsHtml(detail.requirements);
+                    layoutConfigs.back.requirements = cleaned;
+                    backRequirementsTextarea.value = cleaned;
+                    layoutConfigs.back.showRequirements = true;
+                    backShowRequirements.checked = true;
+                    backRequirementsTextareaGroup.style.display = "block";
+                    updateLayoutContent();
+                }
+            })
+            .catch(err => console.error("Failed to query game details for PC requirements:", err));
 
         // Trigger updates
         updateLayoutContent();
@@ -231,6 +287,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // Disc Label
         previewDiscTitle.textContent = titleText;
         previewDiscAppid.textContent = `AppID: ${appidText}`;
+
+        // System Requirements display logic
+        const showReqs = layoutConfigs.back.showRequirements;
+        if (showReqs && layoutConfigs.back.requirements) {
+            previewBackRequirements.style.display = "block";
+            previewRequirementsContent.textContent = layoutConfigs.back.requirements;
+            previewBackInstructions.style.display = "none";
+        } else {
+            previewBackRequirements.style.display = "none";
+            previewBackInstructions.style.display = "block";
+        }
         
         ['front', 'back', 'disc'].forEach(layout => {
             updateLayoutLogo(layout);
@@ -482,6 +549,18 @@ document.addEventListener('DOMContentLoaded', () => {
             layoutConfigs[layout].logoSize = e.target.value;
             updateLayoutLogo(layout);
         });
+    });
+
+    // System requirements controls
+    backShowRequirements.addEventListener('change', (e) => {
+        layoutConfigs.back.showRequirements = e.target.checked;
+        backRequirementsTextareaGroup.style.display = e.target.checked ? "block" : "none";
+        updateLayoutContent();
+    });
+
+    backRequirementsTextarea.addEventListener('input', (e) => {
+        layoutConfigs.back.requirements = e.target.value;
+        updateLayoutContent();
     });
 
     tabBtns.forEach(btn => {

@@ -365,6 +365,44 @@ class CDCreatorHTTPHandler(SimpleHTTPRequestHandler):
                 self.send_response(500)
                 self.end_headers()
             return
+
+        # API Route: Rich Game Details
+        elif path == "/api/game-details":
+            query_params = urllib.parse.parse_qs(parsed.query)
+            appid = query_params.get("appid", [""])[0]
+            
+            if not appid:
+                self.send_response(400)
+                self.end_headers()
+                return
+                
+            url = f"https://store.steampowered.com/api/appdetails?appids={appid}&l=english"
+            try:
+                req = urllib.request.Request(
+                    url, 
+                    headers={'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36'}
+                )
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    data = json.loads(response.read().decode('utf-8'))
+                    
+                    requirements_html = ""
+                    app_data = data.get(appid, {})
+                    if isinstance(app_data, dict) and app_data.get("success"):
+                        gdata = app_data.get("data", {})
+                        pc_reqs = gdata.get("pc_requirements", {})
+                        if isinstance(pc_reqs, dict):
+                            requirements_html = pc_reqs.get("minimum", "")
+                            
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Access-Control-Allow-Origin", "*")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"requirements": requirements_html}).encode('utf-8'))
+            except Exception as e:
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
+            return
             
         # Serve static frontend files
         if path == "/" or path == "/index.html":

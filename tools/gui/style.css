@@ -677,6 +677,33 @@ header {
     font-weight: 500;
 }
 
+.back-requirements {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    padding: 2mm 3mm;
+    margin-bottom: 2mm;
+    font-size: 6.5pt;
+    line-height: 1.25;
+    max-height: 38mm;
+    overflow: hidden;
+    text-align: left;
+}
+
+.back-requirements .req-title {
+    font-family: var(--font-heading);
+    font-size: 7pt;
+    font-weight: 700;
+    margin-bottom: 1mm;
+    color: var(--accent-teal);
+    letter-spacing: 0.5px;
+}
+
+.back-requirements .req-content {
+    white-space: pre-line;
+    color: rgba(255, 255, 255, 0.8);
+}
+
 .back-instructions {
     font-size: 7.5pt;
     color: rgba(255, 255, 255, 0.4);
