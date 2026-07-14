@@ -932,6 +932,34 @@ header {
     margin-bottom: 6mm;
 }
 
+/* PAL PlayStation 1 Case Sizing overrides */
+.case-ps1pal #container-back h4::after {
+    content: " - PAL Format (164mm x 122mm)";
+}
+
+.case-ps1pal .cd-back {
+    width: 164mm;
+    height: 122mm;
+}
+
+.case-ps1pal .cd-back .cd-spine {
+    width: 13mm;
+    height: 122mm;
+}
+
+.case-ps1pal .cd-back .cd-back-main {
+    width: 138mm;
+    height: 122mm;
+}
+
+.case-ps1pal .cd-back .fold-l {
+    left: 13mm;
+}
+
+.case-ps1pal .cd-back .fold-r {
+    right: 13mm;
+}
+
 /* ========================================================
    PRINT SPECIFIC CSS RULES (100% SCALE PRINTING IN MM)
    ======================================================== */

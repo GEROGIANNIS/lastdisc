@@ -55,6 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputSpine = document.getElementById('input-spine');
     const fontSelect = document.getElementById('font-family');
     const alignSelect = document.getElementById('text-align');
+    const caseSizeSelect = document.getElementById('case-size-select');
 
     // System Requirements Inputs
     const backShowRequirements = document.getElementById('back-show-requirements');
@@ -514,6 +515,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Event Bindings
     inputTitle.addEventListener('input', updateLayoutContent);
     inputSpine.addEventListener('input', updateLayoutContent);
+
+    caseSizeSelect.addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (val === 'ps1pal') {
+            editorWorkspace.classList.add('case-ps1pal');
+        } else {
+            editorWorkspace.classList.remove('case-ps1pal');
+        }
+    });
 
     // Global typography selections
     fontSelect.addEventListener('change', () => {
