@@ -293,14 +293,80 @@ document.addEventListener('DOMContentLoaded', () => {
         if (showReqs && layoutConfigs.back.requirements) {
             previewBackRequirements.style.display = "block";
             previewRequirementsContent.textContent = layoutConfigs.back.requirements;
-            previewBackInstructions.style.display = "none";
+            previewBackInstructions.classList.add("compact");
         } else {
             previewBackRequirements.style.display = "none";
-            previewBackInstructions.style.display = "block";
+            previewBackInstructions.classList.remove("compact");
         }
+
+        // Generate dynamic vector barcode matching AppID
+        generateBarcode(appidText);
         
         ['front', 'back', 'disc'].forEach(layout => {
             updateLayoutLogo(layout);
+        });
+    }
+
+    // Generate vector Code 39 barcode dynamically based on AppID
+    function generateBarcode(appidText) {
+        const barcodeLinesContainer = document.querySelector('.barcode-lines');
+        if (!barcodeLinesContainer) return;
+        
+        let cleanAppid = appidText.replace(/[^0-9]/g, '');
+        if (cleanAppid.length < 8) {
+            cleanAppid = cleanAppid.padStart(8, '0');
+        }
+        
+        // Standard Code 39 translation matrix
+        const code39 = {
+            '0': 'N N W W N W N N N',
+            '1': 'W N N W N N N N W',
+            '2': 'N N W W N N N N W',
+            '3': 'W N W W N N N N N',
+            '4': 'N N N W W N N N W',
+            '5': 'W N N W W N N N N',
+            '6': 'N N W W W N N N N',
+            '7': 'N N N W N N W N W',
+            '8': 'W N N W N N W N N',
+            '9': 'N N W W N N W N N',
+            '*': 'N N W W N W N N N'
+        };
+        
+        const fullCode = '*' + cleanAppid + '*';
+        barcodeLinesContainer.innerHTML = '';
+        
+        let patternSequence = [];
+        for (let i = 0; i < fullCode.length; i++) {
+            const char = fullCode[i];
+            const representation = code39[char] || code39['*'];
+            const elements = representation.split(' ');
+            
+            for (let j = 0; j < elements.length; j++) {
+                const isBlack = (j % 2 === 0);
+                const isWide = (elements[j] === 'W');
+                patternSequence.push({ isBlack, isWide });
+            }
+            
+            // Add narrow space between characters
+            if (i < fullCode.length - 1) {
+                patternSequence.push({ isBlack: false, isWide: false });
+            }
+        }
+        
+        let totalUnits = 0;
+        patternSequence.forEach(bar => {
+            totalUnits += bar.isWide ? 2.5 : 1.0;
+        });
+        
+        patternSequence.forEach(bar => {
+            const barDiv = document.createElement('div');
+            const weight = bar.isWide ? 2.5 : 1.0;
+            const widthPct = (weight / totalUnits) * 100;
+            
+            barDiv.style.width = `${widthPct}%`;
+            barDiv.style.height = '100%';
+            barDiv.style.backgroundColor = bar.isBlack ? '#000000' : '#ffffff';
+            barcodeLinesContainer.appendChild(barDiv);
         });
     }
 

@@ -709,6 +709,15 @@ header {
     color: rgba(255, 255, 255, 0.4);
     line-height: 1.35;
     margin-bottom: 4mm;
+    transition: all 0.2s ease;
+}
+
+.back-instructions.compact {
+    font-size: 6pt;
+    line-height: 1.25;
+    margin-top: 1mm;
+    margin-bottom: 1.5mm;
+    opacity: 0.85;
 }
 
 .barcode {
@@ -724,17 +733,10 @@ header {
 .barcode-lines {
     width: 32mm;
     height: 8mm;
-    background: repeating-linear-gradient(
-        90deg,
-        #000,
-        #000 0.5mm,
-        #fff 0.5mm,
-        #fff 1mm,
-        #000 1mm,
-        #000 1.2mm,
-        #fff 1.2mm,
-        #fff 2mm
-    );
+    display: flex;
+    align-items: stretch;
+    background: #ffffff;
+    overflow: hidden;
 }
 
 .barcode-text {
