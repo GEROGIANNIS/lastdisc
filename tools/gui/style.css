@@ -956,6 +956,13 @@ header {
     box-sizing: border-box;
 }
 
+.dvd-back-panel .cd-image-layer {
+    width: 183mm !important;
+    height: 129.5mm !important;
+    left: -26.75mm !important;
+    top: 26.75mm !important;
+}
+
 .dvd-spine {
     width: 14mm;
     height: 183mm;

@@ -435,7 +435,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const applyBg = (layer) => {
             if (!layer) return;
             layer.style.backgroundImage = 'none';
-            layer.style.transform = `scale(${config.bgZoom / 100})`;
+            
+            if (layer.closest('.dvd-back-panel')) {
+                layer.style.transform = `rotate(90deg) scale(${config.bgZoom / 100})`;
+            } else {
+                layer.style.transform = `scale(${config.bgZoom / 100})`;
+            }
 
             if (config.bgType === 'steam') {
                 let assetPath = 'library_600x900.jpg';
