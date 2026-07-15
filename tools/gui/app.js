@@ -351,7 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (iconSpan) {
                 if (isGog) {
                     iconSpan.innerHTML = `
-                        <svg class="gog-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="#FF0055" style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-right: 2px;">
+                        <svg class="gog-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-right: 2px;">
                             <path d="M8 .2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L8 13l-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/>
                         </svg>
                     `;
@@ -1141,13 +1141,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         const div = document.createElement('div');
                         div.style.marginBottom = '2px';
                         
-                        // Apply nice coloring to launcher launches or errors
-                        if (line.includes('Launching GOG')) {
-                            div.style.color = '#FF0055';
-                        } else if (line.includes('Launching Steam')) {
-                            div.style.color = '#00DFD8';
-                        } else if (line.includes('started')) {
-                            div.style.color = '#10B981';
+                        // Apply high-contrast highlighting to launcher launches or errors
+                        if (line.includes('Launching GOG') || line.includes('Launching Steam') || line.includes('started')) {
+                            div.style.fontWeight = 'bold';
+                            div.style.color = '#ffffff';
+                        } else {
+                            div.style.color = '#888888';
                         }
                         
                         div.textContent = line.trim();
