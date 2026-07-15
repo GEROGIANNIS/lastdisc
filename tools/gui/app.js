@@ -130,7 +130,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         searchResults.innerHTML = '<div class="empty-state">Searching for games...</div>';
 
-        fetch(`/api/search?q=${encodeURIComponent(query)}`)
+        const searchSteam = document.getElementById('filter-steam').checked;
+        const searchGog = document.getElementById('filter-gog').checked;
+        const platforms = [];
+        if (searchSteam) platforms.push('steam');
+        if (searchGog) platforms.push('gog');
+
+        if (platforms.length === 0) {
+            searchResults.innerHTML = '<div class="empty-state">Please select at least one platform filter.</div>';
+            return;
+        }
+
+        fetch(`/api/search?q=${encodeURIComponent(query)}&platforms=${platforms.join(',')}`)
             .then(res => res.json())
             .then(data => {
                 renderSearchResults(data);
@@ -154,19 +165,22 @@ document.addEventListener('DOMContentLoaded', () => {
             item.className = 'game-item';
             
             // Build capsule image
-            const imgUrl = game.image || `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${game.appid}/header.jpg`;
+            const platform = game.platform || 'steam';
+            const imgUrl = game.cover_url || game.image || `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${game.appid}/header.jpg`;
             const proxiedImgUrl = `/api/proxy-image?url=${encodeURIComponent(imgUrl)}`;
             
             const isLocal = game.installed;
-            const badgeClass = isLocal ? 'local' : 'store';
-            const badgeText = isLocal ? 'Installed' : 'Steam DB';
+            const badgeClass = `${platform}-${isLocal ? 'local' : 'store'}`;
+            const badgeText = isLocal 
+                ? `Installed (${platform.toUpperCase()})` 
+                : `${platform === 'gog' ? 'GOG' : 'Steam'} DB`;
 
             item.innerHTML = `
                 <img src="${proxiedImgUrl}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2228%22><rect width=%22100%25%22 height=%22100%25%22 fill=%22%23222%22/><text x=%2250%25%22 y=%2250%25%22 fill=%22%23555%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%228%22>No Art</text></svg>'">
                 <div class="game-info">
                     <div class="game-name">${game.name}</div>
                     <div class="game-meta">
-                        <span>AppID: ${game.appid}</span>
+                        <span>${platform === 'gog' ? 'GOG ID' : 'AppID'}: ${game.appid}</span>
                         <span class="badge-source ${badgeClass}">${badgeText}</span>
                     </div>
                 </div>
@@ -238,6 +252,13 @@ document.addEventListener('DOMContentLoaded', () => {
         inputAppid.value = game.appid;
         inputSpine.value = '';
 
+        const platform = game.platform || 'steam';
+        const radio = document.querySelector(`input[name="launcher-type"][value="${platform}"]`);
+        if (radio) {
+            radio.checked = true;
+            radio.dispatchEvent(new Event('change'));
+        }
+
         // Reset active classes on all source buttons in sidebar HTML
         document.querySelectorAll('.btn-bg-source').forEach(btn => {
             const bgType = btn.dataset.bg;
@@ -291,14 +312,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const titleText = inputTitle.value.trim() || selectedGame.name;
         const appidText = inputAppid.value.trim() || selectedGame.appid;
         const spineText = inputSpine.value.trim() || titleText;
+        
+        const launcherVal = document.querySelector('input[name="launcher-type"]:checked').value;
+        const isGog = launcherVal === 'gog';
 
         // Front Cover
         previewFrontTitle.textContent = titleText;
-        previewFrontAppid.textContent = `AppID: ${appidText}`;
+        previewFrontAppid.textContent = `${isGog ? 'GOG ID' : 'AppID'}: ${appidText}`;
 
         // Back Cover
         previewBackTitle.textContent = titleText;
-        previewBackAppid.textContent = `STEAM APPID: ${appidText}`;
+        previewBackAppid.textContent = `${isGog ? 'GOG GAME ID' : 'STEAM APPID'}: ${appidText}`;
         barcodeAppid.textContent = appidText.padStart(12, '0');
 
         // Spines
@@ -307,15 +331,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Disc Label
         previewDiscTitle.textContent = titleText;
-        previewDiscAppid.textContent = `AppID: ${appidText}`;
+        previewDiscAppid.textContent = `${isGog ? 'GOG ID' : 'AppID'}: ${appidText}`;
 
         // DVD Wraparound Cover Text Mirroring
         if (previewDvdSpine) previewDvdSpine.textContent = spineText;
         if (previewDvdFrontTitle) previewDvdFrontTitle.textContent = titleText;
-        if (previewDvdFrontAppid) previewDvdFrontAppid.textContent = `AppID: ${appidText}`;
+        if (previewDvdFrontAppid) previewDvdFrontAppid.textContent = `${isGog ? 'GOG ID' : 'AppID'}: ${appidText}`;
         if (previewDvdBackTitle) previewDvdBackTitle.textContent = titleText;
-        if (previewDvdBackAppid) previewDvdBackAppid.textContent = `STEAM APPID: ${appidText}`;
+        if (previewDvdBackAppid) previewDvdBackAppid.textContent = `${isGog ? 'GOG GAME ID' : 'STEAM APPID'}: ${appidText}`;
         if (dvdBarcodeAppid) dvdBarcodeAppid.textContent = appidText.padStart(12, '0');
+
+        // Swap SVG badges dynamically
+        document.querySelectorAll('.cd-front-badge').forEach(badge => {
+            const iconSpan = badge.querySelector('.badge-icon');
+            const textSpan = badge.querySelector('.badge-text');
+            if (textSpan) {
+                textSpan.textContent = isGog ? 'GOG Galaxy' : 'Steam launcher';
+            }
+            if (iconSpan) {
+                if (isGog) {
+                    iconSpan.innerHTML = `
+                        <svg class="gog-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="#FF0055" style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-right: 2px;">
+                            <path d="M8 .2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L8 13l-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/>
+                        </svg>
+                    `;
+                } else {
+                    iconSpan.innerHTML = `
+                        <svg class="steam-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-right: 2px;">
+                            <path d="M12.5.75c-.5 0-.96.22-1.28.59L7.4 3.9C6.6 3.65 5.75 3.5 4.88 3.5 2.18 3.5 0 5.68 0 8.38c0 2.37 1.68 4.34 3.94 4.78.03.1.06.2.13.3.16.2.38.33.62.38l3.97 1.35c.1.03.22.06.34.06.5 0 .97-.22 1.28-.6l3.85-4.52c.8.25 1.65.4 2.5.4 2.7 0 4.88-2.18 4.88-4.88 0-2.38-1.68-4.35-3.94-4.8-.03-.1-.06-.2-.13-.3-.16-.2-.38-.33-.62-.38L8.88.94C8.78.9 8.66.88 8.54.88c-.5 0-.97.22-1.28.6L6.5 2.5h-.06l-.56-.56c.03-.06.06-.13.06-.2 0-.68-.56-1.25-1.25-1.25S3.44 1.06 3.44 1.75s.56 1.25 1.25 1.25c.22 0 .4-.06.56-.16l.56.56C5.53 3.69 5.25 4 4.88 4c-2.4 0-4.38 1.97-4.38 4.38s1.97 4.38 4.38 4.38c1.9 0 3.53-1.25 4.13-2.97l.47.47c-.1.22-.16.47-.16.75 0 1.03.84 1.88 1.88 1.88s1.88-.84 1.88-1.88c0-.66-.34-1.25-.88-1.56l.44-.53c.6.2 1.25.3 1.94.3 2.4 0 4.38-1.97 4.38-4.38S14.9 3.5 12.5 3.5z"/>
+                        </svg>
+                    `;
+                }
+            }
+        });
 
         // System Requirements display logic
         const showReqs = layoutConfigs.back.showRequirements;
@@ -449,16 +497,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (config.bgType === 'steam') {
-                let assetPath = 'library_600x900.jpg';
-                if (config.artStyle === 'hero') {
-                    assetPath = 'library_hero.jpg';
-                } else if (config.artStyle === 'header') {
-                    assetPath = 'header.jpg';
+                let coverUrl = '';
+                if (selectedGame.platform === 'gog') {
+                    coverUrl = selectedGame.cover_url || '';
+                } else {
+                    let assetPath = 'library_600x900.jpg';
+                    if (config.artStyle === 'hero') {
+                        assetPath = 'library_hero.jpg';
+                    } else if (config.artStyle === 'header') {
+                        assetPath = 'header.jpg';
+                    }
+                    coverUrl = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${selectedGame.appid}/${assetPath}`;
                 }
-
-                const coverUrl = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${selectedGame.appid}/${assetPath}`;
-                const proxiedUrl = `/api/proxy-image?url=${encodeURIComponent(coverUrl)}`;
-                layer.style.backgroundImage = `url('${proxiedUrl}')`;
+                const proxiedUrl = coverUrl ? `/api/proxy-image?url=${encodeURIComponent(coverUrl)}` : '';
+                layer.style.backgroundImage = proxiedUrl ? `url('${proxiedUrl}')` : 'none';
             } else if (config.bgType === 'upload' && config.customImage) {
                 layer.style.backgroundImage = `url('${config.customImage}')`;
             }
@@ -495,8 +547,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const useLogo = config.useLogo && config.bgType === 'steam';
 
             if (useLogo) {
-                const logoUrl = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${selectedGame.appid}/logo.png`;
-                const proxiedLogo = `/api/proxy-image?url=${encodeURIComponent(logoUrl)}`;
+                let logoUrl = '';
+                if (selectedGame.platform === 'gog') {
+                    logoUrl = selectedGame.logo_url || '';
+                } else {
+                    logoUrl = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${selectedGame.appid}/logo.png`;
+                }
+                const proxiedLogo = logoUrl ? `/api/proxy-image?url=${encodeURIComponent(logoUrl)}` : '';
 
                 logoImg.style.maxHeight = `${baseMaxHeight * (config.logoSize / 100)}px`;
 
@@ -1065,6 +1122,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     inputAppid.placeholder = '';
                 }
             }
+            updateLayoutContent();
+            refreshAllLayouts();
         });
     });
 

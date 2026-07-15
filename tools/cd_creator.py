@@ -186,22 +186,114 @@ def search_steam_store(query):
     except Exception:
         return []
 
-# Search helper combining local and online
-def search_games(query):
-    libs = find_steam_libraries()
-    local_games = scan_local_games(libs)
+# Scan local Registry for installed GOG games (Windows only)
+def find_local_gog_games(query=None):
+    games = []
+    if sys.platform != "win32":
+        return games
+    try:
+        import winreg
+        gog_key_path = r"SOFTWARE\WOW6432Node\GOG.com\Games"
+        try:
+            key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, gog_key_path)
+        except WindowsError:
+            try:
+                key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\GOG.com\Games")
+            except WindowsError:
+                return games
+                
+        i = 0
+        while True:
+            try:
+                subkey_name = winreg.EnumKey(key, i)
+                i += 1
+                try:
+                    subkey = winreg.OpenKey(key, subkey_name)
+                    game_id = subkey_name
+                    title, _ = winreg.QueryValueEx(subkey, "title")
+                    
+                    if not query or query.lower() in title.lower():
+                        games.append({
+                            "appid": str(game_id),
+                            "name": title,
+                            "installed": True,
+                            "source": "Local GOG Library",
+                            "platform": "gog",
+                            "cover_url": "",
+                            "logo_url": ""
+                        })
+                    winreg.CloseKey(subkey)
+                except Exception:
+                    pass
+            except OSError:
+                break
+        winreg.CloseKey(key)
+    except Exception:
+        pass
+    return games
+
+# Search GOG catalog online
+def search_gog_online(query):
+    results = []
+    if not query:
+        return results
+    try:
+        url = "https://catalog.gog.com/v1/catalog?query=like:" + urllib.parse.quote(query) + "&limit=20&productType=in:game"
+        req = urllib.request.Request(
+            url, 
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        )
+        with urllib.request.urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode('utf-8'))
+            products = data.get("products", [])
+            for p in products:
+                results.append({
+                    "appid": str(p.get("id")),
+                    "name": p.get("title"),
+                    "installed": False,
+                    "source": "GOG Store",
+                    "platform": "gog",
+                    "cover_url": p.get("coverVertical", ""),
+                    "logo_url": p.get("logo", "")
+                })
+    except Exception:
+        pass
+    return results
+
+# Search helper combining local and online for Steam and GOG
+def search_games(query, platforms=["steam", "gog"]):
+    results = []
     
-    # Filter local games
-    local_matches = [g for g in local_games if query.lower() in g["name"].lower()]
-    
-    # Filter online games
-    online_matches = search_steam_store(query)
-    
-    # Deduplicate online by AppID if already present in local
-    local_ids = {g["appid"] for g in local_matches}
-    unique_online = [g for g in online_matches if g["appid"] not in local_ids]
-    
-    return local_matches + unique_online
+    # 1. STEAM Search
+    if "steam" in platforms:
+        libs = find_steam_libraries()
+        local_steam = scan_local_games(libs)
+        local_steam_matches = [g for g in local_steam if query.lower() in g["name"].lower()]
+        for g in local_steam_matches:
+            g["platform"] = "steam"
+            g["cover_url"] = ""
+            g["logo_url"] = ""
+            
+        online_steam = search_steam_store(query)
+        for g in online_steam:
+            g["platform"] = "steam"
+            g["cover_url"] = g.get("image", "")
+            g["logo_url"] = ""
+            
+        local_ids = {g["appid"] for g in local_steam_matches}
+        unique_online_steam = [g for g in online_steam if g["appid"] not in local_ids]
+        results.extend(local_steam_matches + unique_online_steam)
+        
+    # 2. GOG Search
+    if "gog" in platforms:
+        local_gog = find_local_gog_games(query)
+        online_gog = search_gog_online(query)
+        
+        local_gog_ids = {g["appid"] for g in local_gog}
+        unique_online_gog = [g for g in online_gog if g["appid"] not in local_gog_ids]
+        results.extend(local_gog + unique_online_gog)
+        
+    return results
 
 # Locate ISO building tool cross-platform
 def find_iso_tool():
@@ -611,8 +703,12 @@ class CDCreatorHTTPHandler(SimpleHTTPRequestHandler):
         if path == "/api/search":
             query_params = urllib.parse.parse_qs(parsed.query)
             q = query_params.get("q", [""])[0]
+            platforms_str = query_params.get("platforms", ["steam,gog"])[0]
+            platforms = [p.strip().lower() for p in platforms_str.split(",") if p.strip()]
+            if not platforms:
+                platforms = ["steam", "gog"]
             
-            results = search_games(q) if q else []
+            results = search_games(q, platforms=platforms) if q else []
             
             self.send_response(200)
             self.send_header("Content-Type", "application/json")

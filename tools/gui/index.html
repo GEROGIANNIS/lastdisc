@@ -33,11 +33,24 @@
         <aside class="sidebar no-print">
             <!-- Game Search Section -->
             <section class="search-section">
-                <h3>1. Search Steam Game</h3>
+                <h3>1. Search Games</h3>
                 <div class="search-box">
-                    <input type="text" id="search-input" placeholder="e.g. Portal 2, Half-Life...">
+                    <input type="text" id="search-input" placeholder="e.g. Portal 2, Witcher...">
                     <button id="search-button" class="btn-search">🔍</button>
                 </div>
+                
+                <!-- Platform Filters -->
+                <div class="platform-filters" style="display: flex; gap: 15px; margin-top: 8px; margin-bottom: 8px; padding-left: 5px;">
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.85rem; color: #F3F4F6; user-select: none;">
+                        <input type="checkbox" id="filter-steam" checked style="accent-color: #00DFD8; cursor: pointer;">
+                        Steam
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.85rem; color: #F3F4F6; user-select: none;">
+                        <input type="checkbox" id="filter-gog" checked style="accent-color: #00DFD8; cursor: pointer;">
+                        GOG
+                    </label>
+                </div>
+
                 <div id="search-results" class="search-results">
                     <!-- Search results dynamically loaded here -->
                     <div class="empty-state">Search for a game to start creating your CD cover and ISO manifest.</div>
