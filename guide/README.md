@@ -46,7 +46,13 @@ Before starting, make sure you have:
 > **Task Scheduler Permissions:**
 > Registering a scheduled task on Windows requires administrative privileges. However, the watcher script itself must run as your normal logged-in user. The installer script `install.ps1` automatically handles this by querying your active interactive username and registering the task to run under your limited user context.
 
-To install:
+To install (Method 1: One-Click Executable - Recommended):
+1. Navigate to the `setup\windows` folder in File Explorer.
+2. Double-click **`install.exe`**.
+3. Click **Yes** on the Windows User Account Control (UAC) prompt to allow it to run as Administrator.
+4. The installer will automatically elevate, run the PowerShell installer under the hood, start the background watcher task, and display a confirmation.
+
+To install (Method 2: Manual PowerShell Command):
 1. Open a regular PowerShell prompt and navigate to the project folder:
    ```powershell
    cd setup\windows
@@ -90,7 +96,16 @@ This creates a folder at `~\AppData\Local\LastDisc`, copies the watcher script t
 
 ### Windows Uninstallation
 
-To completely remove the watcher and its scheduled task, navigate to the `setup\windows` folder and run this self-elevating command in a regular PowerShell window:
+To completely remove the watcher and its scheduled task:
+
+#### Method 1: One-Click Executable (Recommended)
+1. Navigate to the `setup\windows` folder in File Explorer.
+2. Double-click **`uninstall.exe`**.
+3. Click **Yes** on the UAC prompt to allow it to run as Administrator.
+4. The uninstaller will automatically elevate, delete the scheduled task, wipe the AppData files, and display a confirmation.
+
+#### Method 2: Manual PowerShell Command
+Navigate to the `setup\windows` folder and run this self-elevating command in a regular PowerShell window:
 ```powershell
 cd setup\windows
 Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"cd '$pwd'; .\uninstall.ps1; Start-Sleep -Seconds 3`""
