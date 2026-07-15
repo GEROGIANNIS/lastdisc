@@ -215,7 +215,7 @@ def find_iso_tool():
     return None
 
 # Generate ISO or raw structure
-def generate_iso(appid, title, output_path):
+def generate_iso(appid, title, output_path, launcher="steam"):
     tool = find_iso_tool()
     temp_dir = tempfile.mkdtemp()
     
@@ -224,6 +224,7 @@ def generate_iso(appid, title, output_path):
         manifest_data = {
             "app_id": str(appid),
             "title": title,
+            "launcher": launcher,
             "version": "1.0"
         }
         with open(manifest_path, "w", encoding="utf-8") as f:
@@ -484,17 +485,18 @@ def format_drive(drive_id, file_system="FAT32", label="LASTDISC"):
             return True
         raise Exception(f"Formatting failed (requires root/sudo). Error: {res.stderr}")
 
-def write_manifest_to_drive(drive_path, appid, title):
+def write_manifest_to_drive(drive_path, appid, title, launcher="steam"):
     manifest_data = {
         "app_id": str(appid),
         "title": title,
+        "launcher": launcher,
         "version": "1.0"
     }
     manifest_file = os.path.join(drive_path, "lastdisc.json")
     with open(manifest_file, "w", encoding="utf-8") as f:
         json.dump(manifest_data, f, indent=2)
 
-def prepare_drive_action(drive_id, method, appid, title):
+def prepare_drive_action(drive_id, method, appid, title, launcher="steam"):
     drive_path = None
     if sys.platform == "win32":
         drive_letter = drive_id.rstrip(":").rstrip("\\")
@@ -513,23 +515,23 @@ def prepare_drive_action(drive_id, method, appid, title):
             try:
                 res = subprocess.run(["mount", drive_id, temp_mount], capture_output=True)
                 if res.returncode == 0:
-                    write_manifest_to_drive(temp_mount, appid, title)
+                    write_manifest_to_drive(temp_mount, appid, title, launcher=launcher)
                     subprocess.run(["umount", temp_mount])
                 else:
                     raise Exception(f"Failed to mount formatted drive at {temp_mount} to write manifest. Error: {res.stderr}")
             finally:
                 shutil.rmtree(temp_mount)
         else:
-            write_manifest_to_drive(drive_path, appid, title)
+            write_manifest_to_drive(drive_path, appid, title, launcher=launcher)
     elif method == "clean":
         clean_drive_contents(drive_id)
         if not drive_path:
             raise Exception("Target drive path not resolved.")
-        write_manifest_to_drive(drive_path, appid, title)
+        write_manifest_to_drive(drive_path, appid, title, launcher=launcher)
     elif method == "write":
         if not drive_path:
             raise Exception("Target drive path not resolved (is it mounted?).")
-        write_manifest_to_drive(drive_path, appid, title)
+        write_manifest_to_drive(drive_path, appid, title, launcher=launcher)
     else:
         raise Exception(f"Invalid method: {method}")
         
@@ -685,6 +687,33 @@ class CDCreatorHTTPHandler(SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
             return
             
+        # API Route: View Watcher Logs
+        elif path == "/api/logs":
+            try:
+                if sys.platform == "win32":
+                    log_file = os.path.expandvars(r"%LOCALAPPDATA%\LastDisc\watcher.log")
+                else:
+                    log_file = os.path.expanduser("~/.config/LastDisc/watcher.log")
+                
+                log_lines = []
+                if os.path.isfile(log_file):
+                    with open(log_file, "r", encoding="utf-8", errors="ignore") as lf:
+                        lines = lf.readlines()
+                        log_lines = lines[-100:]
+                
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(json.dumps({"logs": log_lines}).encode('utf-8'))
+            except Exception as e:
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
+            return
+            
         # API Route: List Drives
         elif path == "/api/list-drives":
             try:
@@ -738,6 +767,7 @@ class CDCreatorHTTPHandler(SimpleHTTPRequestHandler):
                 
                 appid = params.get("appid")
                 title = params.get("title")
+                launcher = params.get("launcher", "steam")
                 
                 if not appid or not title:
                     self.send_response(400)
@@ -749,7 +779,7 @@ class CDCreatorHTTPHandler(SimpleHTTPRequestHandler):
                 os.close(fd)
                 
                 try:
-                    success, final_path = generate_iso(appid, title, temp_iso_path)
+                    success, final_path = generate_iso(appid, title, temp_iso_path, launcher=launcher)
                     if success:
                         self.send_response(200)
                         self.send_header("Content-Type", "application/octet-stream")
@@ -789,6 +819,7 @@ class CDCreatorHTTPHandler(SimpleHTTPRequestHandler):
                 method = params.get("method")
                 appid = params.get("appid")
                 title = params.get("title")
+                launcher = params.get("launcher", "steam")
                 
                 if not drive_id or not method or not appid or not title:
                     self.send_response(400)
@@ -804,7 +835,7 @@ class CDCreatorHTTPHandler(SimpleHTTPRequestHandler):
                     if not re.match(r"^/dev/[a-zA-Z0-9]+$", drive_id):
                         raise Exception("Invalid drive format.")
                         
-                prepare_drive_action(drive_id, method, appid, title)
+                prepare_drive_action(drive_id, method, appid, title, launcher=launcher)
                 
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")

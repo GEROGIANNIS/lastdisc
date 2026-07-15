@@ -93,6 +93,15 @@ This creates a folder at `~\AppData\Local\LastDisc`, copies the watcher script t
   ```powershell
   Remove-Item -Path "$env:TEMP\lastdisc\*.lock" -Force
   ```
+- **System Tray Management Utility**:
+  LastDisc includes a lightweight notification area tray manager (`LastDiscTray.exe`).
+  - Running `install.exe` or `install.ps1` automatically copies this file to your AppData folder and configures it to start on logon (stored in Registry at `HKCU:\Software\Microsoft\Windows\CurrentVersion\Run`).
+  - Right-click the CD disc icon (💿) in your system tray to open the local dashboard web interface, start/stop the watcher task, or view watcher event history.
+- **Watcher Logs**:
+  The background watcher logs all scanning, disk insertion, game launches, and configuration statuses to a persistent log file:
+  - **Windows**: `%LOCALAPPDATA%\LastDisc\watcher.log`
+  - **Linux**: `~/.config/LastDisc/watcher.log`
+  You can view these logs by right-clicking the tray icon, opening the log file directly, or inspecting the **4. Watcher Logs** terminal pane in the Sidebar of the local Web GUI.
 
 ### Windows Uninstallation
 
@@ -266,6 +275,16 @@ The generated manifest files look like this:
 {
   "app_id": "620",
   "title": "Portal 2",
+  "launcher": "steam",
+  "version": "1.0"
+}
+```
+If you configure a game to launch via GOG Galaxy, the manifest will specify `"launcher": "gog"` instead:
+```json
+{
+  "app_id": "1432422501",
+  "title": "The Witcher 3: Wild Hunt",
+  "launcher": "gog",
   "version": "1.0"
 }
 ```

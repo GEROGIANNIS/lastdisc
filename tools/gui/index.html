@@ -62,7 +62,21 @@
                 </div>
 
                 <div class="control-group">
-                    <label for="input-appid">Steam AppID</label>
+                    <label>Game Launcher</label>
+                    <div class="launcher-radio-group" style="display: flex; gap: 15px; margin-top: 5px; margin-bottom: 5px;">
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.9rem;">
+                            <input type="radio" name="launcher-type" value="steam" checked style="accent-color: #00DFD8;">
+                            Steam
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.9rem;">
+                            <input type="radio" name="launcher-type" value="gog" style="accent-color: #00DFD8;">
+                            GOG Galaxy
+                        </label>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label for="input-appid" id="label-appid">Steam AppID</label>
                     <input type="text" id="input-appid" readonly>
                 </div>
 
@@ -336,6 +350,16 @@
                 <div class="status-box" id="drive-status" style="display: none; margin-top: 1rem;">
                     <div class="spinner"></div>
                     <span id="drive-status-text">Preparing drive...</span>
+                </div>
+            </section>
+
+            <!-- Watcher Logs Section -->
+            <section class="editor-section" id="logs-section" style="margin-top: 1rem;">
+                <h3>4. Watcher Logs</h3>
+                <div class="log-console-container" style="background: rgba(10, 10, 12, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 10px; margin-top: 0.5rem;">
+                    <div id="log-console" style="max-height: 150px; overflow-y: auto; font-family: monospace; font-size: 0.8rem; color: #9CA3AF; line-height: 1.4;">
+                        <div class="log-line system" style="color: #00DFD8;">Ready. Waiting for log updates...</div>
+                    </div>
                 </div>
             </section>
         </aside>

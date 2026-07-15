@@ -795,6 +795,8 @@ document.addEventListener('DOMContentLoaded', () => {
         statusText.textContent = 'Generating CD ISO image...';
         btnIso.disabled = true;
 
+        const launcherVal = document.querySelector('input[name="launcher-type"]:checked').value;
+
         fetch('/api/create-iso', {
             method: 'POST',
             headers: {
@@ -802,7 +804,8 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             body: JSON.stringify({
                 appid: appidText,
-                title: titleText
+                title: titleText,
+                launcher: launcherVal
             })
         })
         .then(async response => {
@@ -997,6 +1000,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             btnPrepareDrive.disabled = true;
             
+            const launcherVal = document.querySelector('input[name="launcher-type"]:checked').value;
+
             fetch('/api/prepare-drive', {
                 method: 'POST',
                 headers: {
@@ -1006,7 +1011,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     drive_id: driveId,
                     method: method,
                     appid: appidText,
-                    title: titleText
+                    title: titleText,
+                    launcher: launcherVal
                 })
             })
             .then(res => {
@@ -1038,4 +1044,65 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    // Launcher Type Change Event Listener (Steam vs GOG)
+    const labelAppid = document.getElementById('label-appid');
+    const launcherRadios = document.querySelectorAll('input[name="launcher-type"]');
+    
+    launcherRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (val === 'gog') {
+                if (labelAppid) labelAppid.textContent = 'GOG Game ID';
+                if (inputAppid) {
+                    inputAppid.removeAttribute('readonly');
+                    inputAppid.placeholder = 'Enter GOG Game ID manually';
+                }
+            } else {
+                if (labelAppid) labelAppid.textContent = 'Steam AppID';
+                if (inputAppid) {
+                    inputAppid.setAttribute('readonly', 'true');
+                    inputAppid.placeholder = '';
+                }
+            }
+        });
+    });
+
+    // Watcher Logs Polling Logic
+    const logConsole = document.getElementById('log-console');
+    function fetchLogs() {
+        if (!logConsole) return;
+        fetch('/api/logs')
+            .then(res => res.json())
+            .then(data => {
+                if (data.logs && data.logs.length > 0) {
+                    logConsole.innerHTML = '';
+                    data.logs.forEach(line => {
+                        const div = document.createElement('div');
+                        div.style.marginBottom = '2px';
+                        
+                        // Apply nice coloring to launcher launches or errors
+                        if (line.includes('Launching GOG')) {
+                            div.style.color = '#FF0055';
+                        } else if (line.includes('Launching Steam')) {
+                            div.style.color = '#00DFD8';
+                        } else if (line.includes('started')) {
+                            div.style.color = '#10B981';
+                        }
+                        
+                        div.textContent = line.trim();
+                        logConsole.appendChild(div);
+                    });
+                    // Auto scroll to bottom
+                    logConsole.scrollTop = logConsole.scrollHeight;
+                }
+            })
+            .catch(err => {
+                console.error("Failed to fetch logs:", err);
+            });
+    }
+
+    // Poll logs immediately and then every 3 seconds
+    fetchLogs();
+    setInterval(fetchLogs, 3000);
 });
