@@ -3,6 +3,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // State Variables
     let selectedGame = null;
+    let cachedDrives = [];
     
     // Configurations for each cover layout independently
     const layoutConfigs = {
@@ -225,6 +226,11 @@ document.addEventListener('DOMContentLoaded', () => {
         backRequirementsTextareaGroup.style.display = "none";
 
         editorControls.style.display = 'block';
+        const driveControls = document.getElementById('drive-controls');
+        if (driveControls) {
+            driveControls.style.display = 'block';
+            refreshDrivesList();
+        }
         btnPrint.disabled = false;
         btnIso.disabled = false;
 
@@ -837,4 +843,199 @@ document.addEventListener('DOMContentLoaded', () => {
             btnIso.disabled = false;
         });
     });
+
+    // DOM elements for drive setup
+    const driveTypeSelect = document.getElementById('drive-type-select');
+    const driveSelect = document.getElementById('drive-select');
+    const btnRefreshDrives = document.getElementById('btn-refresh-drives');
+    const driveActionsGroup = document.getElementById('drive-actions-group');
+    const btnPrepareDrive = document.getElementById('btn-prepare-drive');
+    const driveStatus = document.getElementById('drive-status');
+    const driveStatusText = document.getElementById('drive-status-text');
+
+    if (btnRefreshDrives) {
+        btnRefreshDrives.addEventListener('click', refreshDrivesList);
+    }
+    if (driveTypeSelect) {
+        driveTypeSelect.addEventListener('change', populateDrivesDropdown);
+    }
+    if (driveSelect) {
+        driveSelect.addEventListener('change', () => {
+            const val = driveSelect.value;
+            if (val && driveActionsGroup) {
+                driveActionsGroup.style.display = 'block';
+            } else if (driveActionsGroup) {
+                driveActionsGroup.style.display = 'none';
+            }
+        });
+    }
+
+    function refreshDrivesList() {
+        if (!btnRefreshDrives) return;
+        btnRefreshDrives.disabled = true;
+        btnRefreshDrives.textContent = '⏳';
+        
+        driveSelect.innerHTML = '<option value="">-- Scanning drives... --</option>';
+        if (driveActionsGroup) driveActionsGroup.style.display = 'none';
+
+        fetch('/api/list-drives')
+            .then(res => res.json())
+            .then(drives => {
+                cachedDrives = drives || [];
+                populateDrivesDropdown();
+            })
+            .catch(err => {
+                console.error("Failed to list drives:", err);
+                driveSelect.innerHTML = '<option value="">Error scanning drives</option>';
+            })
+            .finally(() => {
+                btnRefreshDrives.disabled = false;
+                btnRefreshDrives.textContent = '🔄';
+            });
+    }
+
+    function populateDrivesDropdown() {
+        if (!driveSelect) return;
+        
+        const typeFilter = driveTypeSelect ? driveTypeSelect.value : '2';
+        
+        // Clear previous options
+        driveSelect.innerHTML = '';
+        
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = '-- Select a drive --';
+        driveSelect.appendChild(defaultOpt);
+        
+        let filtered = cachedDrives;
+        if (typeFilter !== 'all') {
+            const filterCode = parseInt(typeFilter, 10);
+            filtered = cachedDrives.filter(d => d.type_code === filterCode);
+        }
+        
+        if (filtered.length === 0) {
+            const noDrivesOpt = document.createElement('option');
+            noDrivesOpt.value = '';
+            noDrivesOpt.textContent = 'No matching drives found';
+            driveSelect.appendChild(noDrivesOpt);
+            if (driveActionsGroup) driveActionsGroup.style.display = 'none';
+            return;
+        }
+        
+        filtered.forEach(drive => {
+            const opt = document.createElement('option');
+            opt.value = drive.id;
+            
+            let label = `${drive.id} - ${drive.name} (${drive.type})`;
+            if (drive.size) {
+                let sizeGB = 0;
+                if (typeof drive.size === 'number') {
+                    sizeGB = (drive.size / (1024 * 1024 * 1024)).toFixed(1);
+                    label += ` [${sizeGB} GB]`;
+                } else {
+                    label += ` [${drive.size}]`;
+                }
+            }
+            if (drive.is_system) {
+                label += ' (System Drive - BLOCKED)';
+                opt.disabled = true;
+            }
+            
+            opt.textContent = label;
+            driveSelect.appendChild(opt);
+        });
+
+        // Trigger change event to toggle action controls visibility
+        driveSelect.dispatchEvent(new Event('change'));
+    }
+
+    if (btnPrepareDrive) {
+        btnPrepareDrive.addEventListener('click', () => {
+            if (!selectedGame) {
+                alert("Please select a game first.");
+                return;
+            }
+            const driveId = driveSelect.value;
+            if (!driveId) {
+                alert("Please select a target drive.");
+                return;
+            }
+            
+            // Safety double check
+            const selectedDriveObj = cachedDrives.find(d => d.id === driveId);
+            if (selectedDriveObj && selectedDriveObj.is_system) {
+                alert("Safety Block: You cannot format or modify the operating system drive.");
+                return;
+            }
+            
+            const methodInput = document.querySelector('input[name="prep-method"]:checked');
+            const method = methodInput ? methodInput.value : 'clean';
+            
+            let confirmMsg = "";
+            if (method === 'format') {
+                confirmMsg = `⚠️ DANGER: This will completely FORMAT drive ${driveId} (${selectedDriveObj ? selectedDriveObj.name : ''}).\nAll existing data will be lost!\n\nAre you absolutely sure you want to format and write the launch manifest?`;
+            } else if (method === 'clean') {
+                confirmMsg = `⚠️ WARNING: This will delete files on drive ${driveId} (${selectedDriveObj ? selectedDriveObj.name : ''}) to prepare it.\n\nAre you sure you want to clean this drive and write the launch manifest?`;
+            } else {
+                confirmMsg = `Write LastDisc launch manifest to drive ${driveId}?\n(Existing files will be preserved).`;
+            }
+            
+            if (!confirm(confirmMsg)) {
+                return;
+            }
+            
+            if (method === 'format' && !confirm("DOUBLE CONFIRMATION:\nAre you 100% sure? This action is irreversible.")) {
+                return;
+            }
+            
+            const titleText = inputTitle.value.trim() || selectedGame.name;
+            const appidText = inputAppid.value.trim() || selectedGame.appid;
+            
+            if (driveStatus) {
+                driveStatus.style.display = 'flex';
+                driveStatusText.textContent = `Preparing drive ${driveId}...`;
+            }
+            btnPrepareDrive.disabled = true;
+            
+            fetch('/api/prepare-drive', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    drive_id: driveId,
+                    method: method,
+                    appid: appidText,
+                    title: titleText
+                })
+            })
+            .then(res => {
+                if (!res.ok) {
+                    return res.text().then(text => { throw new Error(text || 'Failed to prepare drive') });
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                driveStatusText.textContent = `⚡ Success! Drive ${driveId} is prepared for ${titleText}.`;
+                alert(`SUCCESS:\nDrive ${driveId} has been successfully prepared for "${titleText}".\n\nYou can now insert it to launch this game!`);
+                setTimeout(() => {
+                    if (driveStatus) driveStatus.style.display = 'none';
+                }, 5000);
+            })
+            .catch(err => {
+                console.error("Error setting up drive:", err);
+                driveStatusText.textContent = `❌ Error preparing drive.`;
+                alert(`Error: ${err.message}\n\nNote: Full formatting may require running this tool as Administrator/Root.`);
+                setTimeout(() => {
+                    if (driveStatus) driveStatus.style.display = 'none';
+                }, 6000);
+            })
+            .finally(() => {
+                btnPrepareDrive.disabled = false;
+            });
+        });
+    }
 });

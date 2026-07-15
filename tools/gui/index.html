@@ -286,6 +286,58 @@
                     <span id="status-text">Generating CD ISO image...</span>
                 </div>
             </section>
+
+            <!-- Removable Drive Section -->
+            <section class="drive-section" id="drive-controls" style="display: none;">
+                <h3>3. Prepare Removable Drive</h3>
+                
+                <div class="control-group">
+                    <label for="drive-type-select">Drive Type Filter</label>
+                    <select id="drive-type-select">
+                        <option value="2" selected>Removable / USB Drives</option>
+                        <option value="3">Local / External Hard Drives</option>
+                        <option value="5">CD/DVD/Optical Drives</option>
+                        <option value="all">All Connected Drives</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="drive-select">Target Drive</label>
+                    <div class="drive-select-container">
+                        <select id="drive-select">
+                            <option value="">-- Click refresh to list --</option>
+                        </select>
+                        <button id="btn-refresh-drives" class="btn btn-sm btn-outline" type="button" title="Refresh Drives list">🔄</button>
+                    </div>
+                </div>
+
+                <div class="control-group" id="drive-actions-group" style="display: none;">
+                    <label>Preparation Method</label>
+                    <div class="prep-options">
+                        <label class="radio-container">
+                            <input type="radio" name="prep-method" value="clean" checked>
+                            <span><b>Clean & Write (Safe)</b>Erase files & write manifest</span>
+                        </label>
+                        <label class="radio-container">
+                            <input type="radio" name="prep-method" value="format">
+                            <span><b>Full Format & Write</b>Format to FAT32 (needs admin)</span>
+                        </label>
+                        <label class="radio-container">
+                            <input type="radio" name="prep-method" value="write">
+                            <span><b>Write Manifest Only</b>Keep existing files</span>
+                        </label>
+                    </div>
+                    
+                    <button id="btn-prepare-drive" class="btn btn-accent btn-block" style="margin-top: 1rem; width: 100%;">
+                        ⚡ Setup Selected Drive
+                    </button>
+                </div>
+                
+                <div class="status-box" id="drive-status" style="display: none; margin-top: 1rem;">
+                    <div class="spinner"></div>
+                    <span id="drive-status-text">Preparing drive...</span>
+                </div>
+            </section>
         </aside>
 
         <!-- Main Workspace displaying interactive CD items -->

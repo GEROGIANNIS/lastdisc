@@ -28,7 +28,7 @@ LastDisc allows you to insert a physical game disc and automatically launch the 
 
 Before starting, make sure you have:
 - **Steam Client** installed, logged in, and running.
-- A **CD/DVD/Blu-ray drive** (internal or external USB drive) or a virtual drive mount emulator.
+- A **CD/DVD/Blu-ray drive** (internal or external USB drive), a **USB flash drive / external drive**, or a virtual drive mount emulator.
 - Windows or Linux operating system satisfying the platform requirements below.
 
 ---
@@ -43,30 +43,35 @@ Before starting, make sure you have:
 ### Windows Installation
 
 > [!IMPORTANT]
-> **Do NOT run PowerShell as Administrator (elevated).**
-> The LastDisc watcher runs under your normal user session to interact with your desktop and communicate with Steam. If you run the installation or the watcher elevated, session inheritance will break, and LastDisc won't be able to launch Steam games.
+> **Task Scheduler Permissions:**
+> Registering a scheduled task on Windows requires administrative privileges. However, the watcher script itself must run as your normal logged-in user. The installer script `install.ps1` automatically handles this by querying your active interactive username and registering the task to run under your limited user context.
 
-1. Open a regular, **unelevated** PowerShell window.
-2. Navigate to the project's setup directory:
+To install:
+1. Open a regular PowerShell prompt and navigate to the project folder:
    ```powershell
    cd setup\windows
    ```
-3. Run the installation script:
+2. Run the following command to automatically elevate, run the installer, and start the background task:
    ```powershell
-   .\install.ps1
+   Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"cd '$pwd'; .\install.ps1; Start-ScheduledTask -TaskName LastDiscWatcher; Start-Sleep -Seconds 3`""
    ```
-   This will create a folder at `~\AppData\Local\LastDisc`, copy the watcher script there, and register a Windows Scheduled Task named `LastDiscWatcher` that triggers automatically when you log on.
+3. Click **Yes** on the Windows User Account Control (UAC) dialog when it pops up.
+
+*(Alternatively, you can manually open an **Administrator: Windows PowerShell** prompt, navigate to `setup\windows`, and run `powershell -ExecutionPolicy Bypass -File .\install.ps1`)*
+
+This creates a folder at `~\AppData\Local\LastDisc`, copies the watcher script there, and registers a Windows Scheduled Task named `LastDiscWatcher` that triggers automatically when you log on.
 
 ### Windows Verification & Running
 
-- **Start the watcher immediately** without logging out and back in:
+- **Start the watcher immediately**:
   ```powershell
   Start-ScheduledTask -TaskName "LastDiscWatcher"
   ```
-- **Check if the task is registered and running**:
+- **Check the running state**:
   ```powershell
-  Get-ScheduledTask -TaskName "LastDiscWatcher"
+  (Get-ScheduledTask -TaskName "LastDiscWatcher").State
   ```
+  If it outputs `Ready`, the task is installed but not yet running. Run `Start-ScheduledTask` to make it state `Running`.
 - **Stop the watcher task manually**:
   ```powershell
   Stop-ScheduledTask -TaskName "LastDiscWatcher"
@@ -191,6 +196,15 @@ We provide helper tools to easily create the directory structure, compile burnab
      - **CD Disc Surface Label** (116mm diameter with 15mm/40mm center hole guidelines)
   5. Click **Download ISO** to download a compiled `.iso` with your `lastdisc.json` manifest directly from the browser.
   6. Click **Print Covers** (or press Ctrl+P) to print the layouts.
+  7. **Setup a Removable Drive directly (Autoformat & Setup)**:
+     Under the **3. Prepare Removable Drive** section in the sidebar, you can set up any connected USB drive or external drive in one click:
+     - **Filter**: Choose "Removable / USB Drives", "Local / External Hard Drives", or "CD/DVD/Optical Drives".
+     - **Select**: Choose your drive from the drop-down menu (click 🔄 to refresh the list). System drives (like C: or root) are automatically flagged and blocked for safety.
+     - **Choose Method**:
+       - *Clean & Write (Safe)*: Wipes existing user files and writes `lastdisc.json` directly. (Safe, recommended, does not require admin privileges).
+       - *Full Format & Write*: Formats the target drive to FAT32 and writes `lastdisc.json`. (Requires running the server with admin/root privileges).
+       - *Write Manifest Only*: Keeps all existing files on the drive and just adds `lastdisc.json` to the root.
+     - Click **Setup Selected Drive** (a warning confirmation will prompt you before executing formatting or cleaning operations).
      
      > [!IMPORTANT]
      > **Print Settings for Exact 1:1 Scale:**
@@ -224,6 +238,8 @@ Burn the contents of the `disc_root/` folder directly to the root of your CD/DVD
 ## How It Works (Under the Hood)
 
 1. **Polling**: The watcher runs in the background, waking up every 2 seconds.
-2. **Detection**: It checks optical drive and removable media paths for the presence of `lastdisc.json`.
+2. **Detection**:
+   - **Windows**: The watcher scans both optical drives (`DriveType=5`) and USB/removable drives (`DriveType=2`) for the presence of `lastdisc.json`.
+   - **Linux**: The watcher scans all mounts in `/run/media/$USER/*`, `/media/$USER/*`, and `/mnt/*`.
 3. **Launch Handoff**: It reads the `app_id` and triggers the Steam client protocol handler (`steam://rungameid/<app_id>`). LastDisc never executes binary files from the disc itself, satisfying safety requirements and working on `noexec` mounts.
 4. **Lock Mechanism (Debouncing)**: Upon launch, LastDisc creates a lock file (e.g., `620.lock`) in a temporary workspace. While this file exists, it will not launch the game again. Once the disc is ejected (and `lastdisc.json` is no longer found), the watcher clears the lock files, prepping the system for the next insert.

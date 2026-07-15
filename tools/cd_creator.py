@@ -254,6 +254,287 @@ def generate_iso(appid, title, output_path):
     finally:
         shutil.rmtree(temp_dir)
 
+# Drive listing, cleaning, formatting, and preparation logic
+def list_drives():
+    drives = []
+    if sys.platform == "win32":
+        try:
+            cmd = ["powershell", "-NoProfile", "-Command",
+                   "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID, VolumeName, DriveType, Size, FreeSpace | ConvertTo-Json -Compress"]
+            res = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            output = res.stdout.strip()
+            if output:
+                data = json.loads(output)
+                if isinstance(data, dict):
+                    data = [data]
+                for d in data:
+                    dt = d.get("DriveType")
+                    dt_str = "Unknown"
+                    if dt == 2: dt_str = "Removable Disk"
+                    elif dt == 3: dt_str = "Local Disk"
+                    elif dt == 4: dt_str = "Network Drive"
+                    elif dt == 5: dt_str = "Compact Disc"
+                    
+                    sys_drive = os.environ.get("SystemDrive", "C:")
+                    is_system = d.get("DeviceID", "").upper() == sys_drive.upper()
+                    
+                    drives.append({
+                        "id": d.get("DeviceID"),
+                        "name": d.get("VolumeName") or "Unlabeled",
+                        "type": dt_str,
+                        "type_code": dt,
+                        "size": d.get("Size"),
+                        "free": d.get("FreeSpace"),
+                        "is_system": is_system
+                    })
+        except Exception:
+            try:
+                import ctypes
+                kernel32 = ctypes.windll.kernel32
+                volumeNameBuffer = ctypes.create_unicode_buffer(1024)
+                fileSystemNameBuffer = ctypes.create_unicode_buffer(1024)
+                for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+                    drive_path = f"{letter}:\\"
+                    dtype = kernel32.GetDriveTypeW(drive_path)
+                    if dtype > 1:
+                        dt_str = "Unknown"
+                        if dtype == 2: dt_str = "Removable Disk"
+                        elif dtype == 3: dt_str = "Local Disk"
+                        elif dtype == 4: dt_str = "Network Drive"
+                        elif dtype == 5: dt_str = "Compact Disc"
+                        
+                        res = kernel32.GetVolumeInformationW(
+                            drive_path, volumeNameBuffer, len(volumeNameBuffer),
+                            None, None, None, fileSystemNameBuffer, len(fileSystemNameBuffer)
+                        )
+                        vol_name = volumeNameBuffer.value if res else ""
+                        
+                        freeBytes = ctypes.c_ulonglong(0)
+                        totalBytes = ctypes.c_ulonglong(0)
+                        kernel32.GetDiskFreeSpaceExW(
+                            drive_path, None, ctypes.byref(totalBytes), ctypes.byref(freeBytes)
+                        )
+                        
+                        sys_drive = os.environ.get("SystemDrive", "C:")
+                        is_system = f"{letter}:".upper() == sys_drive.upper()
+                        
+                        drives.append({
+                            "id": f"{letter}:",
+                            "name": vol_name or "Unlabeled",
+                            "type": dt_str,
+                            "type_code": dtype,
+                            "size": totalBytes.value,
+                            "free": freeBytes.value,
+                            "is_system": is_system
+                        })
+            except Exception:
+                pass
+    else:
+        try:
+            cmd = ["lsblk", "-o", "NAME,TYPE,SIZE,LABEL,FSTYPE,MOUNTPOINT,RM,TRAN", "--json"]
+            res = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            output = res.stdout.strip()
+            if output:
+                data = json.loads(output)
+                for dev in data.get("blockdevices", []):
+                    mountpoint = dev.get("mountpoint") or ""
+                    is_system = mountpoint == "/"
+                    
+                    name = dev.get("name")
+                    dev_path = f"/dev/{name}"
+                    dtype = dev.get("type")
+                    
+                    dt_str = "Removable Disk" if dev.get("rm") == "1" or dev.get("rm") == True or "usb" in (dev.get("tran") or "").lower() else "Local Disk"
+                    if dtype == "rom":
+                        dt_str = "Compact Disc"
+                        
+                    size_str = dev.get("size") or "0"
+                    size_bytes = 0
+                    try:
+                        if size_str.endswith("G"):
+                            size_bytes = int(float(size_str[:-1]) * 1024 * 1024 * 1024)
+                        elif size_str.endswith("M"):
+                            size_bytes = int(float(size_str[:-1]) * 1024 * 1024)
+                        elif size_str.endswith("K"):
+                            size_bytes = int(float(size_str[:-1]) * 1024)
+                        else:
+                            size_bytes = int(size_str)
+                    except ValueError:
+                        pass
+                        
+                    drives.append({
+                        "id": dev_path,
+                        "name": dev.get("label") or dev.get("name"),
+                        "type": dt_str,
+                        "type_code": 5 if dtype == "rom" else 2,
+                        "size": size_bytes or size_str,
+                        "free": None,
+                        "is_system": is_system,
+                        "mountpoint": mountpoint
+                    })
+                    
+                    for child in dev.get("children", []):
+                        child_mount = child.get("mountpoint") or ""
+                        child_name = child.get("name")
+                        child_dev = f"/dev/{child_name}"
+                        child_is_system = child_mount == "/"
+                        
+                        drives.append({
+                            "id": child_dev,
+                            "name": child.get("label") or child.get("name"),
+                            "type": dt_str,
+                            "type_code": 2,
+                            "size": child.get("size"),
+                            "free": None,
+                            "is_system": child_is_system,
+                            "mountpoint": child_mount
+                        })
+        except Exception:
+            try:
+                with open("/proc/mounts", "r") as f:
+                    for line in f:
+                        parts = line.split()
+                        if len(parts) >= 2 and parts[0].startswith("/dev/"):
+                            dev_path = parts[0]
+                            mountpoint = parts[1]
+                            if mountpoint.startswith(("/media/", "/run/media/", "/mnt/")):
+                                drives.append({
+                                    "id": dev_path,
+                                    "name": os.path.basename(mountpoint),
+                                    "type": "Removable Disk",
+                                    "type_code": 2,
+                                    "size": None,
+                                    "free": None,
+                                    "is_system": False,
+                                    "mountpoint": mountpoint
+                                })
+            except Exception:
+                pass
+    return drives
+
+def clean_drive_contents(drive_id):
+    if sys.platform == "win32":
+        drive_letter = drive_id.rstrip(":").rstrip("\\")
+        sys_drive = os.environ.get("SystemDrive", "C:").rstrip(":")
+        if drive_letter.upper() == sys_drive.upper():
+            raise Exception("Safety Error: Cannot wipe system drive.")
+        drive_path = f"{drive_letter}:\\"
+    else:
+        mountpoint = None
+        drives = list_drives()
+        for d in drives:
+            if d["id"] == drive_id:
+                if d["is_system"] or d.get("mountpoint") == "/":
+                    raise Exception("Safety Error: Cannot wipe system drive.")
+                mountpoint = d.get("mountpoint")
+                break
+        if not mountpoint:
+            raise Exception(f"Drive {drive_id} is not mounted or not found.")
+        drive_path = mountpoint
+
+    if not os.path.exists(drive_path):
+        raise Exception(f"Target path {drive_path} does not exist.")
+
+    for item in os.listdir(drive_path):
+        item_path = os.path.join(drive_path, item)
+        try:
+            if os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+            else:
+                os.remove(item_path)
+        except Exception:
+            pass
+    return True
+
+def format_drive(drive_id, file_system="FAT32", label="LASTDISC"):
+    if sys.platform == "win32":
+        drive_letter = drive_id.rstrip(":").rstrip("\\")
+        sys_drive = os.environ.get("SystemDrive", "C:").rstrip(":")
+        if drive_letter.upper() == sys_drive.upper():
+            raise Exception("Safety Error: Cannot format system drive.")
+            
+        cmd = ["powershell", "-NoProfile", "-Command",
+               f"Format-Volume -DriveLetter {drive_letter} -FileSystem {file_system} -NewFileSystemLabel '{label}' -Force -Confirm:$false"]
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        if res.returncode == 0:
+            return True
+            
+        cmd = ["cmd", "/c", f"format {drive_letter}: /FS:{file_system} /V:{label} /Q /Y"]
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        if res.returncode == 0:
+            return True
+            
+        raise Exception(f"Formatting failed. PowerShell error: {res.stderr}")
+    else:
+        drives = list_drives()
+        dev_path = None
+        for d in drives:
+            if d["id"] == drive_id:
+                if d["is_system"]:
+                    raise Exception("Safety Error: Cannot format system drive.")
+                dev_path = d["id"]
+                break
+        if not dev_path:
+            raise Exception(f"Device {drive_id} not found.")
+            
+        subprocess.run(["umount", dev_path], capture_output=True)
+        cmd = ["mkfs.vfat", "-F", "32", "-n", label, dev_path]
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        if res.returncode == 0:
+            return True
+        raise Exception(f"Formatting failed (requires root/sudo). Error: {res.stderr}")
+
+def write_manifest_to_drive(drive_path, appid, title):
+    manifest_data = {
+        "app_id": str(appid),
+        "title": title,
+        "version": "1.0"
+    }
+    manifest_file = os.path.join(drive_path, "lastdisc.json")
+    with open(manifest_file, "w", encoding="utf-8") as f:
+        json.dump(manifest_data, f, indent=2)
+
+def prepare_drive_action(drive_id, method, appid, title):
+    drive_path = None
+    if sys.platform == "win32":
+        drive_letter = drive_id.rstrip(":").rstrip("\\")
+        drive_path = f"{drive_letter}:\\"
+    else:
+        drives = list_drives()
+        for d in drives:
+            if d["id"] == drive_id:
+                drive_path = d.get("mountpoint")
+                break
+                
+    if method == "format":
+        format_drive(drive_id, label="LASTDISC")
+        if sys.platform != "win32":
+            temp_mount = tempfile.mkdtemp()
+            try:
+                res = subprocess.run(["mount", drive_id, temp_mount], capture_output=True)
+                if res.returncode == 0:
+                    write_manifest_to_drive(temp_mount, appid, title)
+                    subprocess.run(["umount", temp_mount])
+                else:
+                    raise Exception(f"Failed to mount formatted drive at {temp_mount} to write manifest. Error: {res.stderr}")
+            finally:
+                shutil.rmtree(temp_mount)
+        else:
+            write_manifest_to_drive(drive_path, appid, title)
+    elif method == "clean":
+        clean_drive_contents(drive_id)
+        if not drive_path:
+            raise Exception("Target drive path not resolved.")
+        write_manifest_to_drive(drive_path, appid, title)
+    elif method == "write":
+        if not drive_path:
+            raise Exception("Target drive path not resolved (is it mounted?).")
+        write_manifest_to_drive(drive_path, appid, title)
+    else:
+        raise Exception(f"Invalid method: {method}")
+        
+    return True
+
 # CLI Interface Main Function
 def run_cli():
     print("====================================================")
@@ -404,6 +685,23 @@ class CDCreatorHTTPHandler(SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
             return
             
+        # API Route: List Drives
+        elif path == "/api/list-drives":
+            try:
+                drives = list_drives()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(json.dumps(drives).encode('utf-8'))
+            except Exception as e:
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
+            return
+            
         # Serve static frontend files
         if path == "/" or path == "/index.html":
             filepath = os.path.join(gui_dir, "index.html")
@@ -481,6 +779,45 @@ class CDCreatorHTTPHandler(SimpleHTTPRequestHandler):
                 self.send_response(500)
                 self.end_headers()
                 self.wfile.write(str(e).encode('utf-8'))
+        elif self.path == "/api/prepare-drive":
+            try:
+                content_length = int(self.headers.get('Content-Length', 0))
+                post_data = self.rfile.read(content_length)
+                params = json.loads(post_data.decode('utf-8'))
+                
+                drive_id = params.get("drive_id")
+                method = params.get("method")
+                appid = params.get("appid")
+                title = params.get("title")
+                
+                if not drive_id or not method or not appid or not title:
+                    self.send_response(400)
+                    self.end_headers()
+                    self.wfile.write(b"Missing parameters (drive_id, method, appid, or title)")
+                    return
+                
+                # Sanitize drive_id to prevent injection attacks
+                if sys.platform == "win32":
+                    if not re.match(r"^[a-zA-Z]:$", drive_id.rstrip("\\")):
+                        raise Exception("Invalid drive format.")
+                else:
+                    if not re.match(r"^/dev/[a-zA-Z0-9]+$", drive_id):
+                        raise Exception("Invalid drive format.")
+                        
+                prepare_drive_action(drive_id, method, appid, title)
+                
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": True}).encode('utf-8'))
+            except Exception as e:
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
+            return
 
 # Main Program Entry Point
 def main():

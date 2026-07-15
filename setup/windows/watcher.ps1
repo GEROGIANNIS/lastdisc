@@ -13,7 +13,7 @@ function Write-Log($msg) {
 }
 
 function Find-Manifest {
-    $cdDrives = Get-CimInstance Win32_LogicalDisk -Filter "DriveType=5"
+    $cdDrives = Get-CimInstance Win32_LogicalDisk -Filter "DriveType=5 or DriveType=2"
     foreach ($drive in $cdDrives) {
         $path = Join-Path "$($drive.DeviceID)\" "lastdisc.json"
         if (Test-Path $path) { return $path }

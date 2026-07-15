@@ -74,18 +74,16 @@ To uninstall (from `setup/linux/`): `./uninstall.sh`
 
 ### Windows
 
-Run in an **unelevated** PowerShell prompt:
+Registering scheduled tasks requires Administrator permissions, but the watcher itself runs under your normal user context. Run this command in a regular PowerShell prompt to trigger elevation, run the installer, and start the task:
 
 ```powershell
 cd setup/windows
-.\install.ps1
+Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"cd '$pwd'; .\install.ps1; Start-ScheduledTask -TaskName LastDiscWatcher; Start-Sleep -Seconds 3`""
 ```
 
-This registers a logon-triggered Scheduled Task named `LastDiscWatcher` at
-**Limited** run level. Do not run `install.ps1` as Administrator — elevation
-breaks the session inheritance this depends on.
+*(Alternatively, run `powershell -ExecutionPolicy Bypass -File .\install.ps1` from an elevated Administrator PowerShell prompt).*
 
-To uninstall (from `setup/windows/`): `.\uninstall.ps1`
+To uninstall (run from an elevated prompt in `setup/windows/`): `.\uninstall.ps1`
 
 ### Preparing a disc
 
@@ -108,6 +106,7 @@ This launches a local web server (defaults to `http://localhost:8000`) and opens
 - **Visual Design Studio**: Customize titles, alignments, fonts, text overlays, and backgrounds. Generates Front Cover (120x120mm), Back Inlay & Spines (150x118mm), and CD Disc Surface (116mm diameter).
 - **Physical-Scale Print Layout**: Hit **Print Covers** to print your customized art at exact physical size.
 - **ISO Export**: Instantly download the compiled `.iso` with your `lastdisc.json` manifest.
+- **USB & Drive Preparation**: Select and set up any connected USB drive or external drive in one click. Features include Safe Cleaning (wipes files & writes manifest), Full FAT32 Formatting, or Writing Manifest Only.
 
 *Note: Legacy positional arguments are still supported for quick raw directory generation without Python:*
 - **Linux:** `./setup/linux/make_marker.sh 12345 "My Game" ./disc_root`
