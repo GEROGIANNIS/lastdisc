@@ -122,16 +122,28 @@ Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy 
 
 ### Linux Installation
 
-1. Open your terminal.
-2. Navigate to the setup directory:
+#### Method 1: One-Click GUI (Recommended)
+1. Open a terminal and navigate to the setup folder:
    ```bash
    cd setup/linux
    ```
-3. Make the scripts executable:
+2. Make the GUI files executable and run the installer GUI:
+   ```bash
+   chmod +x install_gui.sh gui_wrapper.py install.sh
+   ./install_gui.sh
+   ```
+   *(Alternatively, in your graphical File Manager, right-click `install_gui.sh`, choose **Properties > Permissions**, allow executing as program, then double-click it and choose **Run**).*
+
+#### Method 2: Manual Terminal Commands
+1. Navigate to the setup folder:
+   ```bash
+   cd setup/linux
+   ```
+2. Make the scripts executable:
    ```bash
    chmod +x install.sh watcher.sh make_marker.sh uninstall.sh
    ```
-4. Run the installation script:
+3. Run the installation script:
    ```bash
    ./install.sh
    ```
@@ -167,7 +179,21 @@ Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy 
 
 ### Linux Uninstallation
 
-To disable the service and delete all installed files, run:
+To completely disable the service and delete all installed files:
+
+#### Method 1: One-Click GUI (Recommended)
+1. Navigate to the setup folder:
+   ```bash
+   cd setup/linux
+   ```
+2. Run the uninstaller GUI:
+   ```bash
+   chmod +x uninstall_gui.sh gui_wrapper.py uninstall.sh
+   ./uninstall_gui.sh
+   ```
+
+#### Method 2: Manual Terminal Commands
+Navigate to the `setup/linux` folder and run the uninstall script:
 ```bash
 cd setup/linux
 ./uninstall.sh
