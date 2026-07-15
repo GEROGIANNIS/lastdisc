@@ -1,6 +1,6 @@
 # LastDisc Installation and Running Guide
 
-LastDisc allows you to insert a physical game disc and automatically launch the corresponding game on Steam. This guide provides comprehensive, step-by-step instructions for setting up the background watcher on Windows and Linux, preparing physical media, running the service, and uninstalling it.
+This guide provides comprehensive, step-by-step instructions for setting up the background watcher on Windows and Linux, preparing physical media, running the service, and uninstalling it.
 
 ---
 
@@ -90,11 +90,12 @@ This creates a folder at `~\AppData\Local\LastDisc`, copies the watcher script t
 
 ### Windows Uninstallation
 
-To completely remove the watcher and its scheduled task, run:
+To completely remove the watcher and its scheduled task, navigate to the `setup\windows` folder and run this self-elevating command in a regular PowerShell window:
 ```powershell
 cd setup\windows
-.\uninstall.ps1
+Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"cd '$pwd'; .\uninstall.ps1; Start-Sleep -Seconds 3`""
 ```
+*(Alternatively, you can manually open an **Administrator: Windows PowerShell** prompt, navigate to `setup\windows`, and run `powershell -ExecutionPolicy Bypass -File .\uninstall.ps1`).*
 
 ---
 
